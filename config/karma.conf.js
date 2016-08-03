@@ -4,6 +4,7 @@ module.exports = function(config){
     var browsers, basePath, coverageReporter;
     var preprocessors = {};
     var projectName = "lab";
+
     preprocessors[__dirname + `/../${projectName}/static/js/${projectName}/*.js`] = 'coverage';
     preprocessors[__dirname + `/../${projectName}/static/js/${projectName}/controllers/*.js`] ='coverage';
     preprocessors[__dirname + `/../${projectName}/static/js/${projectName}/services/*.js`] = 'coverage';
