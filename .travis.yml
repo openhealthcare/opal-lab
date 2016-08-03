@@ -22,4 +22,4 @@ after_success:
 notifications:
   slack: ohcuk:6spaME3CB7f2PGrMAcklYWqp
 addons:
-  firefox: "latest"
+  firefox: "43.0"
