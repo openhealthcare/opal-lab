@@ -21,5 +21,3 @@ after_success:
 #  - coveralls
 notifications:
   slack: ohcuk:6spaME3CB7f2PGrMAcklYWqp
-addons:
-  firefox: "43.0"
