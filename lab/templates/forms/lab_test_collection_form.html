@@ -1,0 +1,9 @@
+{% load forms %}
+
+<div ng-hide="oldCollection">
+  {% input model="local.collection_name" label="Test Suite" lookuplist="collection_names" %}
+  <div ng-include src="metadata.test_collections[local.collection_name].form_url"></div>
+</div>
+<div ng-show="oldCollection">
+  <div ng-include src="formUrl"></div>
+</div>
