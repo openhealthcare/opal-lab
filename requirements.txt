@@ -1,3 +1,4 @@
 python-dateutil==2.4.2
 mock
--e git://github.com/openhealthcare/opal.git@v0.7.0#egg=opal
+jsonfield==1.0.3
+-e git://github.com/openhealthcare/opal.git@v0.8.0#egg=opal
