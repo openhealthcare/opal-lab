@@ -6,6 +6,7 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.db.models.base import ModelBase
 import opal.models as omodels
 from opal.utils import AbstractBase, _itersubclasses, camelcase_to_underscore
+from djchoices import DjangoChoices, ChoiceItem
 
 
 def get_for_lookup_list(model, values):
@@ -24,6 +25,11 @@ class InheritanceMetaclass(ModelBase):
 
 class LabTest(omodels.UpdatesFromDictMixin, omodels.ToDictMixin, omodels.TrackedModel):
     __metaclass__ = InheritanceMetaclass
+
+    class Statuses(DjangoChoices):
+        pending = ChoiceItem("pending")
+        complete = ChoiceItem("complete")
+
     consistency_token = models.CharField(max_length=8)
     content_type = models.ForeignKey(ContentType)
     object_id = models.PositiveIntegerField()
@@ -31,7 +37,12 @@ class LabTest(omodels.UpdatesFromDictMixin, omodels.ToDictMixin, omodels.Tracked
     test_name = models.CharField(max_length=256)
     details = JSONField(blank=True, null=True)
     result = models.CharField(blank=True, null=True, max_length=256)
-    status = models.CharField(blank=True, null=True, max_length=256)
+    status = models.CharField(
+        blank=True,
+        null=True,
+        max_length=256,
+        choices=Statuses.choices
+    )
     sensitive_antibiotics = models.ManyToManyField(
         omodels.Antimicrobial, related_name="test_sensitive"
     )
