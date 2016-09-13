@@ -1,9 +1,19 @@
-from django.db import models
 from jsonfield import JSONField
+from django.db import models
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.fields import GenericRelation
 from django.db.models.base import ModelBase
-from lab import managers
+import opal.models as omodels
 from opal.utils import AbstractBase, _itersubclasses, camelcase_to_underscore
-from opal.models import EpisodeSubrecord, UpdatesFromDictMixin, ToDictMixin
+
+
+def get_for_lookup_list(model, values):
+    ct = ContentType.objects.get_for_model(model)
+    return model.objects.filter(
+        models.Q(name__in=values) |
+        models.Q(synonyms__name__in=values, synonyms__content_type=ct)
+    )
 
 
 class InheritanceMetaclass(ModelBase):
@@ -12,17 +22,28 @@ class InheritanceMetaclass(ModelBase):
         return obj.get_object()
 
 
-class TestProxyModel(models.Model):
+class LabTest(omodels.UpdatesFromDictMixin, omodels.ToDictMixin, omodels.TrackedModel):
     __metaclass__ = InheritanceMetaclass
-    objects = managers.LabTestManager()
-    test_name = models.CharField(max_length=250)
-
-    class Meta:
-        abstract = True
+    consistency_token = models.CharField(max_length=8)
+    content_type = models.ForeignKey(ContentType)
+    object_id = models.PositiveIntegerField()
+    lab_test_collection = GenericForeignKey('content_type', 'object_id')
+    test_name = models.CharField(max_length=256)
+    details = JSONField(blank=True, null=True)
+    result = models.CharField(blank=True, null=True, max_length=256)
+    status = models.CharField(blank=True, null=True, max_length=256)
+    sensitive_antibiotics = models.ManyToManyField(
+        omodels.Antimicrobial, related_name="test_sensitive"
+    )
+    resistant_antibiotics = models.ManyToManyField(
+        omodels.Antimicrobial, related_name="test_resistant"
+    )
 
     def get_object(self):
         if self.test_name:
-            test_class = self.__class__.get_class_from_test_name(self.test_name)
+            test_class = self.__class__.get_class_from_test_name(
+                self.test_name
+            )
 
             if test_class:
                 self.__class__ = test_class
@@ -35,77 +56,61 @@ class TestProxyModel(models.Model):
                 return test_class
 
     def save(self, *args, **kwargs):
-        if not isinstance(models.Model, AbstractBase):
-            self.test_name = self.__class__.get_api_name()
+        if not self.test_name:
+            if not isinstance(models.Model, AbstractBase):
+                self.test_name = self.__class__.get_api_name()
 
-        return super(TestProxyModel, self).save(*args, **kwargs)
+        return super(LabTest, self).save(*args, **kwargs)
 
     @classmethod
     def get_api_name(cls):
         return camelcase_to_underscore(cls._meta.object_name)
 
-
-class LabTestCollection(EpisodeSubrecord):
-    other = JSONField()
-    datetime_ordered = models.DateTimeField(null=True, blank=True)
-
-    # e.g. micro pcr, a string that tells us what type of tags
-    # the tests are tagged with
-    test_tag = models.CharField(max_length=200)
-
     def update_from_dict(self, data, user, **kwargs):
-        tests = data.pop("tests")
-        fields = self.__class__._get_fieldnames_to_serialize()
-        fields.remove("tests")
-        super(LabTestCollection, self).update_from_dict(data, user, fields=fields)
+        fields = set(self.__class__._get_fieldnames_to_serialize())
+
+        # for now lets not save the details
+        fields.remove('details')
+        details = data.pop("details", {})
+        if details:
+            self.details = details
+
+        super(LabTest, self).update_from_dict(data, user, fields=fields, **kwargs)
+
+
+class LabTestCollection(models.Model):
+    """
+        a class that adds utitility methods for
+        accessing an objects lab tests
+    """
+    class Meta:
+        abstract = True
+
+    lab_tests = GenericRelation(LabTest)
+
+    def get_tests(self, test_name):
+        ct = ContentType.objects.get_for_model(self.__class__)
+        object_id = self.id
+        return LabTest.objects.filter(
+            content_type=ct, object_id=object_id, test_name=test_name
+        )
+
+    def save_tests(self, tests, user):
         for test in tests:
-            test_class = LabTest.get_class_from_test_name(test["name"])
-            test_instance = test_class(collection=self)
-            test_instance.update_from_dict(test, user, **kwargs)
-
-    def to_dict(self, user):
-        fields = self.__class__._get_fieldnames_to_serialize()
-        if "tests" in fields:
-            fields.remove("tests")
-        result = self._to_dict(user, fields)
-        result["tests"] = []
-        for test in self.tests.all():
-            result["tests"].append(test.to_dict(user))
-        return result
-
-
-class LabTest(TestProxyModel, UpdatesFromDictMixin, ToDictMixin, AbstractBase):
-    test_tags = []
-    result = models.CharField(max_length=250, null=True, blank=True)
-    datetime_received = models.DateTimeField(null=True, blank=True)
-    datetime_expected = models.DateTimeField(null=True, blank=True)
-    collection = models.ForeignKey(LabTestCollection, related_name="tests")
-    consistency_token = models.CharField(max_length=8)
-
-    # change to choices or something
-    status = models.CharField(max_length=250)
-    other = JSONField()
-
-    def set_consistency_token(self):
-        self.consistency_token = '%08x' % random.randrange(16**8)
-
-    def get_form_template(self):
-        return "templates/lab/tests/{}.html".format(self.get_api_name())
-
-    @classmethod
-    def get_test_tags(cls):
-        return cls.test_tags
-
-    @classmethod
-    def get_display_name(cls):
-        if hasattr(cls, '_title'):
-            return cls._title
-        else:
-            return cls._meta.object_name
+            ct = ContentType.objects.get_for_model(self.__class__)
+            object_id = self.id
+            if "id" in test:
+                test_obj = LabTest.objects.get(id=test["id"])
+            else:
+                test_obj = LabTest()
+                test_obj.content_type = ct
+                test_obj.object_id = object_id
+            test_obj.update_from_dict(test, user)
 
     def update_from_dict(self, data, user, **kwargs):
-        if self.result_choices:
-            if "result" in data and not data["result"] and data["result"] not in self.result_choices:
-                raise ValueError("unable to find a result that matches a result value")
-
-        return super(LabTest, self).update_from_dict(data, user, **kwargs)
+        """ lab tests are foreign keys so have to be saved
+            after the initial set of tests
+        """
+        lab_tests = data.pop('lab_test', [])
+        super(LabTestCollection, self).update_from_dict(data, user, **kwargs)
+        self.save_tests(lab_tests, user)
