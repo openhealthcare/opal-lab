@@ -17,6 +17,7 @@ class LabPlugin(plugins.OpalPlugin):
         ],
         'opal.services': [
             'js/lab/services/records/lab_test_collection_record.js',
+            'js/lab/services/lab_test_collection_form_helper.js',
         ]
     }
 

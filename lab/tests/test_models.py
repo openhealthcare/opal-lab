@@ -1,23 +1,10 @@
 from django.contrib.contenttypes.models import ContentType
-from django.db import models as dmodels
 from opal.core.test import OpalTestCase
-import opal.models as omodels
 from lab import models
+from lab.tests.models import (
+    LabTestCollectionExample, LabTestExample, PosNegTestExample
+)
 
-class LabTestCollectionExample(
-    models.LabTestCollection,
-    omodels.UpdatesFromDictMixin,
-    omodels.ToDictMixin,
-    omodels.TrackedModel
-):
-    consistency_token = dmodels.CharField(max_length=8)
-    collection_meta_data = dmodels.CharField(
-        max_length=256, blank=True, null=True
-    )
-
-class LabTestExample(models.LabTest):
-    class Meta:
-        proxy = True
 
 class LabTestCollectionTestCase(OpalTestCase):
     def setUp(self):
@@ -35,6 +22,35 @@ class LabTestCollectionTestCase(OpalTestCase):
         self.assertEqual(
             list(self.lab_test_collection.get_tests("some_test")),
             []
+        )
+
+    def test_default_test_result_choices(self):
+        # by default we should allow any choice
+        self.assertEqual(
+            models.LabTest.ResultChoices.choices,
+            ()
+        )
+
+    def test_pos_neg_lab_test_result_choices(self):
+        # a special subset that allow positive or negative results
+        self.assertEqual(
+            PosNegTestExample.ResultChoices.choices,
+            (
+                ("positive", "positive",),
+                ("positive", "+ve",),
+                ("negative", "negative",),
+                ("negative", "-ve",),
+            )
+        )
+
+    def test_overridable_lab_test_result_choices(self):
+        # a generic overridden test
+        self.assertEqual(
+            LabTestExample.ResultChoices.choices,
+            (
+                ("orange", "orange"),
+                ("yellow", "yellow"),
+            )
         )
 
     def test_save_tests_update(self):
@@ -57,7 +73,6 @@ class LabTestCollectionTestCase(OpalTestCase):
         lab_test = models.LabTest.objects.get()
         self.assertEqual(lab_test.test_name, "lab_test_example")
         self.assertEqual(lab_test.lab_test_collection, self.lab_test_collection)
-
 
     def test_update_from_dict(self):
          data = dict(lab_test=[dict(test_name="lab_test_example")])
@@ -96,7 +111,6 @@ class LabTestTestCase(OpalTestCase):
             content_type=self.ct, object_id=self.lab_test_collection.id
         )
         lab_test_example.save()
-        lt = models.LabTest.objects.last()
         self.assertFalse(
             models.LabTest.objects.exclude(test_name="lab_test_example").exists()
         )

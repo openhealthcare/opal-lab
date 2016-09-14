@@ -3,9 +3,11 @@ from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.fields import GenericRelation
+from django.core.urlresolvers import reverse
 from django.db.models.base import ModelBase
 import opal.models as omodels
 from opal.utils import AbstractBase, _itersubclasses, camelcase_to_underscore
+from opal.utils import find_template
 from djchoices import DjangoChoices, ChoiceItem
 
 
@@ -24,19 +26,33 @@ class InheritanceMetaclass(ModelBase):
 
 
 class LabTest(omodels.UpdatesFromDictMixin, omodels.ToDictMixin, omodels.TrackedModel):
+    # we really shouldn't have to declare this
+    _advanced_searchable = False
+    _is_singleton = False
     __metaclass__ = InheritanceMetaclass
 
     class Statuses(DjangoChoices):
         pending = ChoiceItem("pending")
         complete = ChoiceItem("complete")
 
+    class ResultChoices(DjangoChoices):
+        pass
+
+
+    date_ordered = models.DateField(blank=True, null=True)
+    date_received = models.DateField(blank=True, null=True)
     consistency_token = models.CharField(max_length=8)
     content_type = models.ForeignKey(ContentType)
     object_id = models.PositiveIntegerField()
     lab_test_collection = GenericForeignKey('content_type', 'object_id')
     test_name = models.CharField(max_length=256)
     details = JSONField(blank=True, null=True)
-    result = models.CharField(blank=True, null=True, max_length=256)
+    result = models.CharField(
+        blank=True,
+        null=True,
+        max_length=256,
+        choices=ResultChoices.choices
+    )
     status = models.CharField(
         blank=True,
         null=True,
@@ -61,6 +77,12 @@ class LabTest(omodels.UpdatesFromDictMixin, omodels.ToDictMixin, omodels.Tracked
         return self
 
     @classmethod
+    def list(cls):
+        for test_class in _itersubclasses(cls):
+            if not isinstance(cls, AbstractBase):
+                yield test_class
+
+    @classmethod
     def get_class_from_test_name(cls, test_name):
         for test_class in _itersubclasses(cls):
             if test_class.get_api_name() == test_name:
@@ -73,9 +95,33 @@ class LabTest(omodels.UpdatesFromDictMixin, omodels.ToDictMixin, omodels.Tracked
 
         return super(LabTest, self).save(*args, **kwargs)
 
+    # TODO these should be in a mixin somewhere
     @classmethod
     def get_api_name(cls):
         return camelcase_to_underscore(cls._meta.object_name)
+
+    @classmethod
+    def get_display_name(cls):
+        if hasattr(cls, '_title'):
+            return cls._title
+        else:
+            return cls._meta.object_name
+
+
+    @classmethod
+    def get_result_form_template(cls):
+        return
+
+    @classmethod
+    def get_form_url(cls):
+        return reverse("lab_test_results_view", kwargs=dict(model=cls.get_api_name()))
+
+    @classmethod
+    def get_form_template(cls):
+        return find_template([
+            # "lab/forms/{}_form.html".format(cls.get_api_name()),
+            "forms/generic_lab_test.html",
+        ])
 
     def update_from_dict(self, data, user, **kwargs):
         fields = set(self.__class__._get_fieldnames_to_serialize())
@@ -89,15 +135,42 @@ class LabTest(omodels.UpdatesFromDictMixin, omodels.ToDictMixin, omodels.Tracked
         super(LabTest, self).update_from_dict(data, user, fields=fields, **kwargs)
 
 
+class GenericLabTest(LabTest):
+    class Meta:
+        proxy = True
+
+
+class PosNegLabTest(LabTest, AbstractBase):
+    class Meta:
+        proxy = True
+
+    class ResultChoices(DjangoChoices):
+        positive = ChoiceItem("positive")
+        positive2 = ChoiceItem("positive", label="+ve")
+        negative = ChoiceItem("negative")
+        negative2 = ChoiceItem("negative", label="-ve")
+
+
 class LabTestCollection(models.Model):
     """
         a class that adds utitility methods for
         accessing an objects lab tests
     """
+
+    _angular_service = 'LabTestCollectionRecord'
+
     class Meta:
         abstract = True
 
     lab_tests = GenericRelation(LabTest)
+
+    @classmethod
+    def _get_fieldnames_to_serialize(cls):
+        # generic foreign keys aren't added at the moment
+        # manually add it
+        existing = super(LabTestCollection, cls)._get_fieldnames_to_serialize()
+        existing.append("lab_tests")
+        return existing
 
     def get_tests(self, test_name):
         ct = ContentType.objects.get_for_model(self.__class__)
@@ -122,6 +195,9 @@ class LabTestCollection(models.Model):
         """ lab tests are foreign keys so have to be saved
             after the initial set of tests
         """
-        lab_tests = data.pop('lab_test', [])
+        lab_tests = data.pop('lab_tests', [])
         super(LabTestCollection, self).update_from_dict(data, user, **kwargs)
         self.save_tests(lab_tests, user)
+
+    def get_lab_tests(self, user):
+        return [i.to_dict(user) for i in self.lab_tests.all()]

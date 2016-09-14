@@ -7,5 +7,6 @@ from lab import views
 
 urlpatterns = patterns(
     '',
-    #url(pattern, view)
+    url(r'^templates/lab_tests/(?P<model>[a-z_\-]+).html/?$',
+        views.LabTestResultTemplateView.as_view(), name="lab_test_results_view"),
 )
