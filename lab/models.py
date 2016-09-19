@@ -152,10 +152,17 @@ class LabTestCollection(models.Model):
 
     _angular_service = 'LabTestCollectionRecord'
 
+    # include other if you want to allow for adding a test
+    _possible_tests = []
+
     class Meta:
         abstract = True
 
     lab_tests = GenericRelation(LabTest)
+
+    @classmethod
+    def get_possible_tests(cls):
+        return cls._possible_tests
 
     @classmethod
     def _get_fieldnames_to_serialize(cls):
