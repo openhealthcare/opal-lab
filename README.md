@@ -50,6 +50,8 @@ class CustomTest(LabTest):
 
 We then have a ResultsChoice class that is used to populate the results choices, so we can have custom choices per test, this is then used as a lookup list when using in the form.
 
+Note when using choices, for simplicity we only use the value as both the display name and what is stored in the database
+
 When bringing in the lab test, bring in the template_context_processor 'lab.context_processors.lab_tests', this will make your lab tests available in templates within the lab_test name space, e.g. lab_test.CustomTest.
 
 lab tests can have their own tests, but also fall back to /templates/generic_lab_test.html.

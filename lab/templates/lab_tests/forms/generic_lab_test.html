@@ -1,0 +1,8 @@
+{% load lab %}
+<div class="form-horizontal">
+  {% if lab_test.ResultChoices.choices %}
+    {% test_result_radio lab_test %}
+  {% else %}
+    {% test_result_input lab_test %}
+  {% endif %}
+</div>

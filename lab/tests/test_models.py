@@ -75,7 +75,7 @@ class LabTestCollectionTestCase(OpalTestCase):
         self.assertEqual(lab_test.lab_test_collection, self.lab_test_collection)
 
     def test_update_from_dict(self):
-         data = dict(lab_test=[dict(test_name="Lab Test Example")])
+         data = dict(lab_tests=[dict(test_name="Lab Test Example")])
          data["collection_meta_data"] = "info"
          self.lab_test_collection.update_from_dict(data, self.user)
 

@@ -114,8 +114,8 @@ class LabTest(omodels.UpdatesFromDictMixin, omodels.ToDictMixin, omodels.Tracked
     @classmethod
     def get_form_template(cls):
         return find_template([
-            # "lab/forms/{}_form.html".format(cls.get_api_name()),
-            "forms/generic_lab_test.html",
+            "lab_tests/forms/{}_form.html".format(cls.get_api_name()),
+            "lab_tests/forms/generic_lab_test.html",
         ])
 
     def update_from_dict(self, data, user, **kwargs):
@@ -140,10 +140,8 @@ class PosNegLabTest(LabTest, AbstractBase):
         proxy = True
 
     class ResultChoices(DjangoChoices):
-        positive = ChoiceItem("positive")
-        positive2 = ChoiceItem("positive", label="+ve")
-        negative = ChoiceItem("negative")
-        negative2 = ChoiceItem("negative", label="-ve")
+        positive = ChoiceItem("+ve")
+        negative = ChoiceItem("-ve")
 
 
 class LabTestCollection(models.Model):
@@ -190,7 +188,7 @@ class LabTestCollection(models.Model):
         """ lab tests are foreign keys so have to be saved
             after the initial set of tests
         """
-        lab_tests = data.pop('lab_test', [])
+        lab_tests = data.pop('lab_tests', [])
         super(LabTestCollection, self).update_from_dict(data, user, **kwargs)
         self.save_tests(lab_tests, user)
 
