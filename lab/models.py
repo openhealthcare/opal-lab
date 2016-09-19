@@ -85,13 +85,13 @@ class LabTest(omodels.UpdatesFromDictMixin, omodels.ToDictMixin, omodels.Tracked
     @classmethod
     def get_class_from_test_name(cls, test_name):
         for test_class in _itersubclasses(cls):
-            if test_class.get_api_name() == test_name:
+            if test_class.get_display_name() == test_name:
                 return test_class
 
     def save(self, *args, **kwargs):
         if not self.test_name:
             if not isinstance(models.Model, AbstractBase):
-                self.test_name = self.__class__.get_api_name()
+                self.test_name = self.__class__.get_display_name()
 
         return super(LabTest, self).save(*args, **kwargs)
 
@@ -105,12 +105,7 @@ class LabTest(omodels.UpdatesFromDictMixin, omodels.ToDictMixin, omodels.Tracked
         if hasattr(cls, '_title'):
             return cls._title
         else:
-            return cls._meta.object_name
-
-
-    @classmethod
-    def get_result_form_template(cls):
-        return
+            return cls._meta.verbose_name.title()
 
     @classmethod
     def get_form_url(cls):
@@ -195,7 +190,7 @@ class LabTestCollection(models.Model):
         """ lab tests are foreign keys so have to be saved
             after the initial set of tests
         """
-        lab_tests = data.pop('lab_tests', [])
+        lab_tests = data.pop('lab_test', [])
         super(LabTestCollection, self).update_from_dict(data, user, **kwargs)
         self.save_tests(lab_tests, user)
 

@@ -2,6 +2,7 @@ from opal.core import metadata
 from lab.models import LabTest
 from opal.core.schemas import serialize_model
 
+
 class LabTestMetadata(metadata.Metadata):
     slug = "lab_test"
 

@@ -9,11 +9,11 @@ register = template.Library()
 @register.inclusion_tag('lab/_helpers/result.html')
 def test_result(lab_test, **kwargs):
     ctx = {}
-    ctx["model"] = kwargs.pop("model", "test.result")
+    ctx["lab_test"] = lab_test
+
     if lab_test.ResultChoices.choices:
         js_dict = {v: k for k, v in lab_test.ResultChoices.choices}
         ctx["lookuplist"] = "k, v in {}".format(json.dumps(js_dict))
-    ctx["label"] = "Result"
     return ctx
 
 

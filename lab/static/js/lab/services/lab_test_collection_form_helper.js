@@ -1,8 +1,9 @@
-angular.module('opal.services').factory('LabTestCollectionFormHelper', function(){
+angular.module('opal.services').factory('LabTestCollectionFormHelper', function(Metadata){
   "use strict";
   var DATE_FORMAT = 'DD/MM/YYYY';
 
   var LabTestCollectionFormHelper = function(labTestCollection){
+      var self = this;
       if(!labTestCollection.lab_tests){
         labTestCollection.lab_tests = [];
       }

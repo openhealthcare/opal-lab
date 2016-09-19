@@ -15,7 +15,7 @@ class LabTestCollectionTestCase(OpalTestCase):
         return models.LabTest.objects.create(
             object_id=self.lab_test_collection.id,
             content_type=ct,
-            test_name="lab_test_example"
+            test_name="Lab Test Example"
         )
 
     def test_get_tests_(self):
@@ -56,33 +56,33 @@ class LabTestCollectionTestCase(OpalTestCase):
     def test_save_tests_update(self):
         initial_lab_test = self.create_lab_test()
         fake_tests = [dict(
-            test_name="lab_test_example",
+            test_name="Lab Test Example",
             id=initial_lab_test.id,
             result="success"
         )]
         self.lab_test_collection.save_tests(fake_tests, self.user)
         lab_test = models.LabTest.objects.get()
-        self.assertEqual(lab_test.test_name, "lab_test_example")
+        self.assertEqual(lab_test.test_name, "Lab Test Example")
         self.assertEqual(lab_test.lab_test_collection, self.lab_test_collection)
         self.assertEqual(lab_test.result, "success")
 
 
     def test_save_tests_create(self):
-        fake_tests = [dict(test_name="lab_test_example")]
+        fake_tests = [dict(test_name="Lab Test Example")]
         self.lab_test_collection.save_tests(fake_tests, self.user)
         lab_test = models.LabTest.objects.get()
-        self.assertEqual(lab_test.test_name, "lab_test_example")
+        self.assertEqual(lab_test.test_name, "Lab Test Example")
         self.assertEqual(lab_test.lab_test_collection, self.lab_test_collection)
 
     def test_update_from_dict(self):
-         data = dict(lab_test=[dict(test_name="lab_test_example")])
+         data = dict(lab_test=[dict(test_name="Lab Test Example")])
          data["collection_meta_data"] = "info"
          self.lab_test_collection.update_from_dict(data, self.user)
 
     def test_query_all_lab_tests(self):
         self.create_lab_test()
         qs = LabTestCollectionExample.objects.filter(
-            lab_tests__test_name="lab_test_example"
+            lab_tests__test_name="Lab Test Example"
         )
         self.assertEqual(qs.first(), self.lab_test_collection)
 
@@ -94,12 +94,12 @@ class LabTestTestCase(OpalTestCase):
         self.lab_test = models.LabTest.objects.create(
             object_id=self.lab_test_collection.id,
             content_type=self.ct,
-            test_name="lab_test_example"
+            test_name="Lab Test Example"
         )
 
     def test_get_class_from_test_name(self):
         self.assertEqual(
-            models.LabTest.get_class_from_test_name("lab_test_example"),
+            models.LabTest.get_class_from_test_name("Lab Test Example"),
             LabTestExample
         )
 
@@ -112,5 +112,5 @@ class LabTestTestCase(OpalTestCase):
         )
         lab_test_example.save()
         self.assertFalse(
-            models.LabTest.objects.exclude(test_name="lab_test_example").exists()
+            models.LabTest.objects.exclude(test_name="Lab Test Example").exists()
         )

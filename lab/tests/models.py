@@ -19,9 +19,6 @@ class PosNegTestExample(models.PosNegLabTest):
         proxy = True
 
 
-    def get_form_url()
-
-
 class LabTestExample(models.LabTest):
     class Meta:
         proxy = True
