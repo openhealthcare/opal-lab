@@ -36,10 +36,8 @@ class LabTestCollectionTestCase(OpalTestCase):
         self.assertEqual(
             PosNegTestExample.ResultChoices.choices,
             (
-                ("positive", "positive",),
-                ("positive", "+ve",),
-                ("negative", "negative",),
-                ("negative", "-ve",),
+                ("+ve", "positive",),
+                ("-ve", "negative",),
             )
         )
 
