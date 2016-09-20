@@ -8,6 +8,12 @@ angular.module('opal.services').factory('LabTestCollectionFormHelper', function(
 
 
   var castTo = function(someFormat, someValue){
+    if(_.isDate(someValue)){
+      return someValue;
+    }
+    if(moment.isMoment(someValue)){
+      return moment.toDate();
+    }
     if(someValue){
       return moment(someValue, someFormat).toDate();
     }
@@ -44,7 +50,7 @@ angular.module('opal.services').factory('LabTestCollectionFormHelper', function(
         lt.date_received = castToDate(lt.date_received);
 
         _.each(datetimeFields, function(dtField){
-          lt[dtField] = castToDateTime(dtField);
+          lt[dtField] = castToDateTime(lt[dtField]);
         });
 
         if(!lt.status){

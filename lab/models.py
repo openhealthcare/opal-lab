@@ -160,9 +160,8 @@ class LabTestCollection(models.Model):
 
     lab_tests = GenericRelation(LabTest)
 
-    @classmethod
-    def get_possible_tests(cls):
-        return cls._possible_tests
+    def get_possible_tests(self):
+        return self._possible_tests
 
     @classmethod
     def _get_fieldnames_to_serialize(cls):
