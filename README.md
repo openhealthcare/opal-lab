@@ -58,8 +58,9 @@ lab tests can have their own tests, but also fall back to /templates/generic_lab
 
 Lab test should be rendered with the 'render_lab_form' template tag, as this makes the LabTest class in question available in the template.
 
-To make LabTests easier to use we have a LabTestCollection. This can be extended by a subrecord and allows updating of and getting of lab tests. Note, test are all serialised to 'lab_test' by the to dict method. This is because its assumed you'll
-want the tests as a group.
+To make LabTests easier to use we have a LabTestCollection. This can be extended by a subrecord and allows updating of and getting of lab tests. Note, test are all serialised to 'lab_test' by the to dict method. This is because its assumed you'll want the tests as a group.
+
+By default a LabTestCollection will delete all other tests that you have updated it with if they're not included, to switch this behaviour off, use _delete_others = False on your LabTestCollection
 
 ### Other fields on LabTest
 Tests often tell us if the organism they're testing is sensitive or resistant to certain antibiotics so we have a many to many field for these.
@@ -73,8 +74,11 @@ A details json field on the element, allows the capture of miscellanious metadat
 #### render_lab_form {{ model e.g. lab_test.Culture }}
 by default falls back to /templates/generic_lab_test.html, but will render any with from /templates/lab_test/forms/{{ api_name }}.html
 
-#### test_result {{ model e.g. lab_test.Culture }}
+#### test_result_input {{ model e.g. lab_test.Culture }}
 this will render the result field as an input with the type ahead options defined in ResultChoices
+
+#### test_result_radio {{ model e.g. lab_test.Culture }}
+this will render the result field as an radio with the result choices
 
 ### Metadata
 this brings in the field serialised data for each lab test, in the same way as the field structure of subrecord is serialised in Opal. simples.
