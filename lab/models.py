@@ -154,6 +154,7 @@ class LabTestCollection(models.Model):
 
     # include other if you want to allow for adding a test
     _possible_tests = []
+    _delete_others = True
 
     class Meta:
         abstract = True
@@ -171,19 +172,21 @@ class LabTestCollection(models.Model):
         existing.append("lab_tests")
         return existing
 
-    def get_tests(self, test_name):
+    def save_tests(self, tests, user):
         ct = ContentType.objects.get_for_model(self.__class__)
         object_id = self.id
-        return LabTest.objects.filter(
-            content_type=ct, object_id=object_id, test_name=test_name
-        )
+        relevent_lab_tests = self.lab_tests.all()
 
-    def save_tests(self, tests, user):
+        if(self._delete_others):
+            ids = [test["id"] for test in tests if "id" in test]
+            to_delete = relevent_lab_tests.exclude(id__in=ids)
+            to_delete.delete()
+
         for test in tests:
-            ct = ContentType.objects.get_for_model(self.__class__)
-            object_id = self.id
             if "id" in test:
-                test_obj = LabTest.objects.get(id=test["id"])
+                # TODO if the test has been deleted in the mean time
+                # this will throw
+                test_obj = relevent_lab_tests.get(id=test["id"])
             else:
                 test_obj = LabTest()
                 test_obj.content_type = ct

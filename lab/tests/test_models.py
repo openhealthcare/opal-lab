@@ -1,3 +1,4 @@
+from mock import patch
 from django.contrib.contenttypes.models import ContentType
 from opal.core.test import OpalTestCase
 from lab import models
@@ -10,18 +11,16 @@ class LabTestCollectionTestCase(OpalTestCase):
     def setUp(self):
         self.lab_test_collection = LabTestCollectionExample.objects.create()
 
-    def create_lab_test(self):
+    def create_lab_test(self, lab_test_collection=None):
+        if not lab_test_collection:
+            lab_test_collection = self.lab_test_collection
+
         ct = ContentType.objects.get_for_model(LabTestCollectionExample)
         return models.LabTest.objects.create(
-            object_id=self.lab_test_collection.id,
+            object_id=lab_test_collection.id,
             content_type=ct,
-            test_name="Lab Test Example"
-        )
-
-    def test_get_tests_(self):
-        self.assertEqual(
-            list(self.lab_test_collection.get_tests("some_test")),
-            []
+            test_name="Lab Test Example",
+            status="pending"
         )
 
     def test_default_test_result_choices(self):
@@ -53,16 +52,51 @@ class LabTestCollectionTestCase(OpalTestCase):
 
     def test_save_tests_update(self):
         initial_lab_test = self.create_lab_test()
+        other_lab_test = self.create_lab_test()
         fake_tests = [dict(
             test_name="Lab Test Example",
             id=initial_lab_test.id,
-            result="success"
+            result="success",
+            status="success"
         )]
         self.lab_test_collection.save_tests(fake_tests, self.user)
         lab_test = models.LabTest.objects.get()
         self.assertEqual(lab_test.test_name, "Lab Test Example")
         self.assertEqual(lab_test.lab_test_collection, self.lab_test_collection)
         self.assertEqual(lab_test.result, "success")
+
+    def test_save_tests_delete_others(self):
+        initial_lab_test = self.create_lab_test()
+        other_collection = LabTestCollectionExample.objects.create()
+        other_lab_test = self.create_lab_test(other_collection)
+        fake_tests = [dict(
+            test_name="Lab Test Example",
+            result="success"
+        )]
+
+        self.lab_test_collection.save_tests(fake_tests, self.user)
+        lab_test = self.lab_test_collection.lab_tests.get()
+        self.assertEqual(lab_test.test_name, "Lab Test Example")
+        self.assertEqual(lab_test.lab_test_collection, self.lab_test_collection)
+        self.assertEqual(lab_test.result, "success")
+        self.assertNotEqual(lab_test.id, initial_lab_test.id)
+        self.assertEqual(models.LabTest.objects.all().count(), 2)
+
+    def test_save_tests_doesnt_delete_others(self):
+        some_collection = LabTestCollectionExample.objects.create()
+        some_collection._delete_others = False
+        initial_test = self.create_lab_test(some_collection)
+        fake_tests = [dict(
+            test_name="Lab Test Example",
+            result="success",
+            status="success"
+        )]
+        some_collection.save_tests(fake_tests, self.user)
+        self.assertEqual(models.LabTest.objects.all().count(), 2)
+        statuses = some_collection.lab_tests.values_list(
+            "status", flat=True
+        )
+        self.assertEqual(list(statuses), ["pending", "success"])
 
 
     def test_save_tests_create(self):
@@ -76,6 +110,7 @@ class LabTestCollectionTestCase(OpalTestCase):
          data = dict(lab_tests=[dict(test_name="Lab Test Example")])
          data["collection_meta_data"] = "info"
          self.lab_test_collection.update_from_dict(data, self.user)
+         self.assertEqual(self.lab_test_collection.collection_meta_data, "info")
 
     def test_query_all_lab_tests(self):
         self.create_lab_test()
