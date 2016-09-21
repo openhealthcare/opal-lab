@@ -8,7 +8,7 @@
     {% datepicker label="Date ordered" model="test.date_ordered" %}
     {% datepicker label="Date received" model="test.date_received" %}
     {% radio label="Status" model="test.status" lookuplist="['pending', 'complete']"%}
-    {% if lab_test.ResultChoices.choices %}
+    {% if lab_test.RESULT_CHOICES %}
       {% test_result_radio lab_test %}
     {% else %}
       {% test_result_input lab_test %}

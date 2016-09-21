@@ -30,7 +30,8 @@ class CustomTest(LabTest):
 
 If you save a lab_test with test_name "custom_test" for all it will use your custom logic when being deserialised.
 
-Further to this as noted, if we want to add custom results, we add a [Django choices](https://pypi.python.org/pypi/django-choices) class called ResultChoices. For example
+Further to this as noted, if we want to add a custom results set as RESULT_CHOICES on your model
+e.g.
 
 
 ```python
@@ -41,16 +42,15 @@ class CustomTest(LabTest):
   class Meta:
     proxy = True
 
-  def update_from_dict(self, *args, **kwargs):
-    # custom test logic
-    orange = ChoiceItem("orange")
-    blue = ChoiceItem("blue")
+  RESULT_CHOICES = (
+    ('orange', '20mg'),
+    ('yellow', '30mg'),
+  )
 ```
 
+The Result Choices are brought through in the meta data as result_choices. This means in templates and controllers you can use constants such as metadata.custom_test.result_choices.orange to be 20mgs.
 
-We then have a ResultsChoice class that is used to populate the results choices, so we can have custom choices per test, this is then used as a lookup list when using in the form.
-
-Note when using choices, for simplicity we only use the value as both the display name and what is stored in the database
+Note in the database we store 20mgs, not orange
 
 When bringing in the lab test, bring in the template_context_processor 'lab.context_processors.lab_tests', this will make your lab tests available in templates within the lab_test name space, e.g. lab_test.CustomTest.
 

@@ -4,18 +4,14 @@ from django.template import loader, Context
 register = template.Library()
 
 
-def extract_args(lab_test, **kwargs):
-    return {"lab_test": lab_test}
-
-
 @register.inclusion_tag('lab/_helpers/result_input.html')
 def test_result_input(lab_test, **kwargs):
-    return extract_args(lab_test, **kwargs)
+    return {"lab_test": lab_test}
 
 
 @register.inclusion_tag('lab/_helpers/result_radio.html')
 def test_result_radio(lab_test, **kwargs):
-    return extract_args(lab_test, **kwargs)
+    return {"lab_test": lab_test}
 
 
 @register.simple_tag()

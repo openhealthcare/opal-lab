@@ -31,13 +31,12 @@ class LabTest(omodels.UpdatesFromDictMixin, omodels.ToDictMixin, omodels.Tracked
     _is_singleton = False
     __metaclass__ = InheritanceMetaclass
 
-    class Statuses(DjangoChoices):
-        pending = ChoiceItem("pending")
-        complete = ChoiceItem("complete")
+    STATUS_CHOICES = (
+        ('pending', 'pending'),
+        ('complete', 'complete'),
+    )
 
-    class ResultChoices(DjangoChoices):
-        pass
-
+    RESULT_CHOICES = ()
 
     date_ordered = models.DateField(blank=True, null=True)
     date_received = models.DateField(blank=True, null=True)
@@ -51,13 +50,13 @@ class LabTest(omodels.UpdatesFromDictMixin, omodels.ToDictMixin, omodels.Tracked
         blank=True,
         null=True,
         max_length=256,
-        choices=ResultChoices.choices
+        choices=RESULT_CHOICES
     )
     status = models.CharField(
         blank=True,
         null=True,
         max_length=256,
-        choices=Statuses.choices
+        choices=STATUS_CHOICES
     )
     sensitive_antibiotics = models.ManyToManyField(
         omodels.Antimicrobial, related_name="test_sensitive"
@@ -77,7 +76,7 @@ class LabTest(omodels.UpdatesFromDictMixin, omodels.ToDictMixin, omodels.Tracked
         return self
 
     def get_result_look_up_list(self):
-        return [i[0] for i in self.ResultChoices.choices]
+        return [i[1] for i in self.RESULT_CHOICES]
 
     @classmethod
     def list(cls):
@@ -142,9 +141,10 @@ class PosNegLabTest(LabTest, AbstractBase):
     class Meta:
         proxy = True
 
-    class ResultChoices(DjangoChoices):
-        positive = ChoiceItem("+ve")
-        negative = ChoiceItem("-ve")
+    RESULT_CHOICES = (
+        ("positive", "+ve"),
+        ("negative", "-ve")
+    )
 
 
 class LabTestCollection(models.Model):

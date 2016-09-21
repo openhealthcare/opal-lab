@@ -14,6 +14,7 @@ class LabTestCollectionExample(
         max_length=256, blank=True, null=True
     )
 
+
 class PosNegTestExample(models.PosNegLabTest):
     class Meta:
         proxy = True
@@ -23,6 +24,7 @@ class LabTestExample(models.LabTest):
     class Meta:
         proxy = True
 
-    class ResultChoices(DjangoChoices):
-        orange = ChoiceItem("orange")
-        yellow = ChoiceItem("yellow")
+    RESULT_CHOICES = (
+        ("orange", "orange",),
+        ("yellow", "yellow",)
+    )

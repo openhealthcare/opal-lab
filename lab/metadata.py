@@ -8,4 +8,11 @@ class LabTestMetadata(metadata.Metadata):
 
     @classmethod
     def to_dict(klass, **kw):
-        return {klass.slug: [serialize_model(i) for i in LabTest.list()]}
+        result = {klass.slug: []}
+
+        for lab_test in LabTest.list():
+            serialised = serialize_model(lab_test)
+            if lab_test.RESULT_CHOICES:
+                serialised["result_choices"] = {k: v for k, v, in lab_test.RESULT_CHOICES}
+            result[klass.slug].append(serialised)
+        return result

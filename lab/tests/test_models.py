@@ -26,24 +26,24 @@ class LabTestCollectionTestCase(OpalTestCase):
     def test_default_test_result_choices(self):
         # by default we should allow any choice
         self.assertEqual(
-            models.LabTest.ResultChoices.choices,
+            models.LabTest.RESULT_CHOICES,
             ()
         )
 
     def test_pos_neg_lab_test_result_choices(self):
         # a special subset that allow positive or negative results
         self.assertEqual(
-            PosNegTestExample.ResultChoices.choices,
+            PosNegTestExample.RESULT_CHOICES,
             (
-                ("+ve", "positive",),
-                ("-ve", "negative",),
+                ("positive", "+ve",),
+                ("negative", "-ve",),
             )
         )
 
     def test_overridable_lab_test_result_choices(self):
         # a generic overridden test
         self.assertEqual(
-            LabTestExample.ResultChoices.choices,
+            LabTestExample.RESULT_CHOICES,
             (
                 ("orange", "orange"),
                 ("yellow", "yellow"),
