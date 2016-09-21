@@ -76,6 +76,9 @@ class LabTest(omodels.UpdatesFromDictMixin, omodels.ToDictMixin, omodels.Tracked
                 self.__class__ = test_class
         return self
 
+    def get_result_look_up_list(self):
+        return [i[0] for i in self.ResultChoices.choices]
+
     @classmethod
     def list(cls):
         for test_class in _itersubclasses(cls):

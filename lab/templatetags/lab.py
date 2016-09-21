@@ -5,10 +5,7 @@ register = template.Library()
 
 
 def extract_args(lab_test, **kwargs):
-    ctx = {"lab_test": lab_test}
-    if lab_test.ResultChoices and lab_test.ResultChoices.choices:
-        ctx["lookuplist"] = [i[0] for i in lab_test.ResultChoices.choices]
-    return ctx
+    return {"lab_test": lab_test}
 
 
 @register.inclusion_tag('lab/_helpers/result_input.html')

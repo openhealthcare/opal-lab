@@ -147,3 +147,9 @@ class LabTestTestCase(OpalTestCase):
         self.assertFalse(
             models.LabTest.objects.exclude(test_name="Lab Test Example").exists()
         )
+
+    def test_get_result_look_up_list(self):
+        self.assertEqual(
+            self.lab_test.get_result_look_up_list(),
+            ["orange", "yellow"],
+        )
