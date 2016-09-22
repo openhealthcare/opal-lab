@@ -8,7 +8,6 @@ from django.db.models.base import ModelBase
 import opal.models as omodels
 from opal.utils import AbstractBase, _itersubclasses, camelcase_to_underscore
 from opal.utils import find_template
-from djchoices import DjangoChoices, ChoiceItem
 
 
 def get_for_lookup_list(model, values):

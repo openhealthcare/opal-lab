@@ -2,6 +2,6 @@
 {% load forms %}
 {% block lab_test_form %}
   {{ block.super }}
-  {% select label="Sensitive" model="aerobicModel.sensitive_antibiotics" lookuplist="antimicrobial_list" multiple=True tagging=False %}
-  {% select label="Resistant" model="aerobicModel.resistant_antibiotics" lookuplist="antimicrobial_list" multiple=True tagging=False %}
+  {% select label="Sensitive" model="test.sensitive_antibiotics" lookuplist="antimicrobial_list" multiple=True tagging=False %}
+  {% select label="Resistant" model="test.resistant_antibiotics" lookuplist="antimicrobial_list" multiple=True tagging=False %}
 {% endblock %}
