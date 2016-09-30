@@ -1,17 +1,37 @@
 This is lab - an [OPAL](https://github.com/openhealthcare/opal) plugin.
 
-### Summary
-This is an abstraction for the OPAL framework that allows the inclusion of different types of test.
+# Overview
 
-Modelling lab tests presents a lot of challenges as there are literally thousands of different tests.
+This is an abstraction for the OPAL framework that allows the inclusion of different
+types of test.
+
+# Installation
+
+1. Run setup.py
+2. Add to installed Apps
+
+# Guides
+
+## Quickstart Guide
+
+TODO: Write me please
+
+## Modelling Lab Medicine
+
+Modelling lab tests presents a lot of challenges as there are literally thousands
+of different tests.
 
 These tests have results particular to them, and sometimes additional meta data.
 
-Given we don't want to model all of these as seperate sql tables we use a django proxy model abstraction.
+Given we don't want to model all of these as seperate sql tables we use a django
+proxy model abstraction.
 
-The LabTest class is the parent of the test proxy models. Its generic enough that it should be able to model any test but also allows customisation so that we can use generated forms easily.
+The LabTest class is the parent of the test proxy models. Its generic enough that
+it should be able to model any test but also allows customisation so that we can
+use generated forms easily.
 
-The LabTest uses test_name field as the api name for whatever you've inherited from it. This is then automagically cast into that class.
+The LabTest uses test_name field as the api name for whatever you've inherited from
+it. This is then automagically cast into that class.
 
 e.g. if you have a class Smear
 
@@ -28,9 +48,11 @@ class CustomTest(LabTest):
 
 ```
 
-If you save a lab_test with test_name "custom_test" for all it will use your custom logic when being deserialised.
+If you save a lab_test with test_name "custom_test" for all it will use your custom
+logic when being deserialised.
 
-Further to this as noted, if we want to add a custom results set as RESULT_CHOICES on your model
+Further to this as noted, if we want to add a custom results set as RESULT_CHOICES
+on your model
 e.g.
 
 
@@ -48,37 +70,60 @@ class CustomTest(LabTest):
   )
 ```
 
-The Result Choices are brought through in the meta data as result_choices. This means in templates and controllers you can use constants such as metadata.custom_test.result_choices.orange to be 20mgs.
+The Result Choices are brought through in the meta data as result_choices. This means
+in templates and controllers you can use constants such as
+`metadata.custom_test.result_choices.orange` to be 20mgs.
 
 Note in the database we store 20mgs, not orange
 
-When bringing in the lab test, bring in the template_context_processor 'lab.context_processors.lab_tests', this will make your lab tests available in templates within the lab_test name space, e.g. lab_test.CustomTest.
+When bringing in the lab test, bring in the template_context_processor
+`lab.context_processors.lab_tests`, this will make your lab tests available in templates
+within the lab_test name space, e.g. lab_test.CustomTest.
 
 lab tests can have their own tests, but also fall back to /templates/generic_lab_test.html.
 
-Lab test should be rendered with the 'render_lab_form' template tag, as this makes the LabTest class in question available in the template.
+Lab test should be rendered with the 'render_lab_form' template tag, as this makes the
+LabTest class in question available in the template.
 
-To make LabTests easier to use we have a LabTestCollection. This can be extended by a subrecord and allows updating of and getting of lab tests. Note, test are all serialised to 'lab_test' by the to dict method. This is because its assumed you'll want the tests as a group.
+To make LabTests easier to use we have a LabTestCollection. This can be extended by a
+subrecord and allows updating of and getting of lab tests. Note, test are all serialised
+to `lab_test` by the to dict method. This is because its assumed you'll want the tests as
+a group.
 
-By default a LabTestCollection will delete all other tests that you have updated it with if they're not included, to switch this behaviour off, use _delete_others = False on your LabTestCollection
+By default a LabTestCollection will delete all other tests that you have updated it with
+if they're not included, to switch this behaviour off, use _delete_others = False on your
+LabTestCollection
+
+# Reference Guides
+
+## LabTest
 
 ### Other fields on LabTest
-Tests often tell us if the organism they're testing is sensitive or resistant to certain antibiotics so we have a many to many field for these.
+
+Tests often tell us if the organism they're testing is sensitive or resistant to certain
+antibiotics so we have a many to many field for these.
 
 we have date ordered/date received and status fields which are self explanatory.
 
 A details json field on the element, allows the capture of miscellanious metadata
 
-### Template tags
+## Template tags
 
-#### render_lab_form {{ model e.g. lab_test.Culture }}
-by default falls back to /templates/generic_lab_test.html, but will render any with from /templates/lab_test/forms/{{ api_name }}.html
+### render_lab_form {{ model e.g. lab_test.Culture }}
 
-#### test_result_input {{ model e.g. lab_test.Culture }}
-this will render the result field as an input with the type ahead options defined in ResultChoices
+By default falls back to /templates/generic_lab_test.html, but will render any with
+from /templates/lab_test/forms/{{ api_name }}.html
 
-#### test_result_radio {{ model e.g. lab_test.Culture }}
-this will render the result field as an radio with the result choices
+### test_result_input {{ model e.g. lab_test.Culture }}
+
+This will render the result field as an input with the type ahead options defined in
+ResultChoices
+
+### test_result_radio {{ model e.g. lab_test.Culture }}
+
+This will render the result field as an radio with the result choices
 
 ### Metadata
-this brings in the field serialised data for each lab test, in the same way as the field structure of subrecord is serialised in Opal. simples.
+
+This brings in the field serialised data for each lab test, in the same way as the
+field structure of subrecord is serialised in Opal. simples.
