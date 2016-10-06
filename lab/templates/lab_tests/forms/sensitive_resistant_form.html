@@ -1,0 +1,7 @@
+{% extends "lab_tests/forms/generic_lab_test.html" %}
+{% load forms %}
+{% block lab_test_form %}
+  {{ block.super }}
+  {% select label="Sensitive" model="test.sensitive_antibiotics" lookuplist="antimicrobial_list" multiple=True tagging=False %}
+  {% select label="Resistant" model="test.resistant_antibiotics" lookuplist="antimicrobial_list" multiple=True tagging=False %}
+{% endblock %}

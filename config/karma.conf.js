@@ -4,9 +4,8 @@ module.exports = function(config){
     var browsers, basePath, coverageReporter;
     var preprocessors = {};
     var projectName = "lab";
-    preprocessors[__dirname+`/../${projectName}/static/js/${projectName}/*.js`] = 'coverage';
-    preprocessors[__dirname+`/../${projectName}/static/js/${projectName}/controllers/*.js`] ='coverage';
-    preprocessors[__dirname+`/../${projectName}/static/js/${projectName}/services/*.js`] = 'coverage';
+
+    preprocessors[__dirname + "/../" + projectName + "/static/js/" + projectName + "/**/*.js"] = 'coverage';
 
     if(process.env.TRAVIS){
         browsers = ["Firefox"];
@@ -76,8 +75,8 @@ module.exports = function(config){
             'opal/services/flow.js',
             'opal/controllers_module.js',
             'opal/controllers/*.js',
-             __dirname+`/../${projectName}/static/js/${projectName}/**/*.js`,
-             __dirname+`/../${projectName}/static/js/${projectName}test/**/*.js`
+            __dirname + "/../" + projectName + "/static/js/" + projectName + "/**/*.js",
+            __dirname + "/../" + projectName + "/static/js/" + projectName + "test/**/*.js",
         ],
 
         // Stolen from http://oligofren.wordpress.com/2014/05/27/running-karma-tests-on-browserstack/

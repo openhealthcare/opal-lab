@@ -16,11 +16,11 @@ settings.configure(DEBUG=True,
                            'ENGINE': 'django.db.backends.sqlite3',
                        }
                    },
-                   OPAL_OPTIONS_MODULE = 'lab.tests.dummy_options_module',
+                   OPAL_OPTIONS_MODULE='lab.tests.dummy_options_module',
                    ROOT_URLCONF='lab.urls',
                    STATIC_URL='/assets/',
                    COMPRESS_ROOT='/tmp/',
-                   MIDDLEWARE_CLASSES = (
+                   MIDDLEWARE_CLASSES=(
                        'django.middleware.common.CommonMiddleware',
                        'django.contrib.sessions.middleware.SessionMiddleware',
                        'opal.middleware.AngularCSRFRename',
@@ -31,13 +31,21 @@ settings.configure(DEBUG=True,
                        'reversion.middleware.RevisionMiddleware',
                        'axes.middleware.FailedLoginMiddleware',
                    ),
-                   INSTALLED_APPS=('django.contrib.auth',
+                   INSTALLED_APPS = ('django.contrib.auth',
                                    'django.contrib.contenttypes',
                                    'django.contrib.sessions',
                                    'django.contrib.staticfiles',
                                    'django.contrib.admin',
                                    'opal',
-                                   'lab',))
+                                   'lab',
+                                   'lab.tests',
+                   ),
+                   MIGRATION_MODULES={
+                       'opal': 'opal.nomigrations',
+                       'lab': 'lab.nomigrations',
+                       'lab.tests': 'lab.tests.nomigrations'
+                   },
+)
 
 import django
 django.setup()

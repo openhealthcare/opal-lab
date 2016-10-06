@@ -12,10 +12,13 @@ class LabPlugin(plugins.OpalPlugin):
     urls = urlpatterns
     javascripts = {
         # Add your javascripts here!
-        'opal.lab': [
-            # 'js/lab/app.js',
-            # 'js/lab/controllers/larry.js',
-            # 'js/lab/services/larry.js',
+        'opal.controllers': [
+            'js/lab/controllers/forms/lab_test_collection_record_form.js',
+            'js/lab/directives.js',
+        ],
+        'opal.services': [
+            'js/lab/services/records/lab_test_collection_record.js',
+            'js/lab/services/lab_test_collection_form_helper.js',
         ]
     }
 
@@ -25,18 +28,6 @@ class LabPlugin(plugins.OpalPlugin):
         plugin may define.
         """
         return []
-
-    def list_schemas(self):
-        """
-        Return any patient list schemas that our plugin may define.
-        """
-        return {}
-
-    def flows(self):
-        """
-        Return any custom flows that our plugin may define
-        """
-        return {}
 
     def roles(self, user):
         """
