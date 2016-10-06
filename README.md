@@ -23,15 +23,15 @@ of different tests.
 
 These tests have results particular to them, and sometimes additional meta data.
 
-Given we don't want to model all of these as seperate sql tables we use a django
+Given we don't want to model all of these as seperate sql tables we use a Django
 proxy model abstraction.
 
-The LabTest class is the parent of the test proxy models. Its generic enough that
+The `LabTest` class is the parent of the test proxy models. It's generic enough that
 it should be able to model any test but also allows customisation so that we can
 use generated forms easily.
 
-The LabTest uses test_name field as the api name for whatever you've inherited from
-it. This is then automagically cast into that class.
+The LabTest uses the `test_name` field as the api name for whatever you've inherited from
+it. This is then cast into that class.
 
 e.g. if you have a class Smear
 
@@ -44,7 +44,7 @@ class CustomTest(LabTest):
     proxy = True
 
   def update_from_dict(self, *args, **kwargs):
-    # custom test logic
+      # custom test logic
 
 ```
 
