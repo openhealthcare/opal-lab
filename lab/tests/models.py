@@ -1,7 +1,7 @@
-from djchoices import DjangoChoices, ChoiceItem
 import opal.models as omodels
 from lab import models
 from django.db import models as dmodels
+
 
 class LabTestCollectionExample(
     models.LabTestCollection,
