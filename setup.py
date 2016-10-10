@@ -15,6 +15,11 @@ setup(
     description='The lab OPAL Plugin',
     long_description=README,
     url='http://opal.openhealthcare.org.uk/',
-    author='',
-    author_email='',
+    author='Open Health Care UK',
+    author_email='hello@openhealthcare.org.uk',
+    install_requires=[
+        'opal>=0.8.0',
+        'django-choices==1.4.4',
+        'jsonfield==1.0.3'
+    ]
 )
