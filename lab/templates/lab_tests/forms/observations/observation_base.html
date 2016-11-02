@@ -1,0 +1,4 @@
+{% load forms %}
+{% if result_choices %}
+  {% radio label=observation.get_display_name model=model lookuplist=result_choices %}
+{% endif %}

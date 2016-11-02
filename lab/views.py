@@ -16,7 +16,7 @@ class LabTestResultTemplateView(LoginRequiredMixin, TemplateView):
     These are generated for subrecords, but can also be used
     by plugins for other mdoels.
     """
-    template_name = "form_base.html"
+    template_name = "lab/forms/form_base.html"
 
     def get_context_data(self, *args, **kwargs):
         ctx = super(LabTestResultTemplateView, self).get_context_data(*args, **kwargs)
@@ -28,5 +28,5 @@ class LabTestResultTemplateView(LoginRequiredMixin, TemplateView):
         Set the context for what this modal is for so
         it can be accessed by all subsequent methods
         """
-        self.lab_test = LabTest.get_class_from_test_name(kw['model'])
+        self.lab_test = LabTest.get_class_from_api_name(kw['model'])
         return super(LabTestResultTemplateView, self).dispatch(*a, **kw)

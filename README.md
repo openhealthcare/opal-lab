@@ -1,6 +1,51 @@
 This is lab - an [OPAL](https://github.com/openhealthcare/opal) plugin.
 
+
 ### Summary
+LabTests are an abstraction for the OPAL framework that allows for the inclusion of different types of test.
+
+
+To declare tests, you can just declare a proxy class that inherits from LabTest for example the below
+
+``` python
+  class Culture(LabTest):
+    class Observations(Observations):
+      organism = OrganismObservation()
+      sputum = PosNegObservation()
+```
+
+This serialises to editing.lab_tests
+
+``` javascript
+{
+  editing: {
+    lab_tests: [{
+      culture: [{
+        name: "culture",
+        observations: {
+          organism: {
+            result: "staphlocochi"
+          }
+        }
+      }]
+    }]
+  }
+}
+
+the alternative is
+{
+  editing: {
+    lab_tests: [{
+      name: "culture",
+      observations: [{
+        name: "organism",
+        result: "staphlocochi"
+      }]
+    }]
+  }
+}
+```
+
 This is an abstraction for the OPAL framework that allows the inclusion of different types of test.
 
 Modelling lab tests presents a lot of challenges as there are literally thousands of different tests.

@@ -1,5 +1,6 @@
 from django import template
 from django.template import loader, Context
+import json
 
 register = template.Library()
 
@@ -15,9 +16,16 @@ def test_result_radio(lab_test, **kwargs):
 
 
 @register.simple_tag()
-def render_lab_form(lab_test):
-    form_template = lab_test.__class__.get_form_template()
+def render_observation(observation):
+    form_template = observation.__class__.get_form_template()
     t = loader.get_template(form_template)
+    result_choices = None
+
+    if observation.get_result_look_up_list():
+        result_choices = json.dumps(observation.get_result_look_up_list())
+
     return t.render(Context({
-        'lab_test': lab_test,
+        'observation': observation,
+        'result_choices': result_choices,
+        'model': "editing.lab_test.{}.result".format(observation.name)
     }))

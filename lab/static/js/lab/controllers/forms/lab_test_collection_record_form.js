@@ -1,4 +1,4 @@
-angular.module('opal.controllers').controller('LabTestCollectionFormCtrl',
+angular.module('opal.controllers').controller('LabTestFormCtrl',
 function(
   $scope, $modalInstance, $modal, $controller,
   profile, item, metadata, referencedata, episode,
@@ -18,7 +18,7 @@ function(
       var vm = this;
       _.extend(vm, parentCtrl);
 
-      $scope.editing.lab_test_collection._formHelper = new LabTestCollectionFormHelper(
+      $scope.editing.lab_test_collection._formHelper = new LabTestFormHelper(
         $scope.editing.lab_test_collection
       );
 

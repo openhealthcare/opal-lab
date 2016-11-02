@@ -1,4 +1,4 @@
-angular.module('opal.services').factory('LabTestCollectionFormHelper', function(Metadata){
+angular.module('opal.services').factory('LabTestFormHelper', function(Metadata){
   "use strict";
   var DATE_FORMAT = 'DD/MM/YYYY';
   var DATETIME_FORMAT = 'DD/MM/YYYY HH:mm:ss';
@@ -33,13 +33,13 @@ angular.module('opal.services').factory('LabTestCollectionFormHelper', function(
   var dateFields = ["date_ordered", "date_received"];
   var datetimeFields = ["created", "updated"];
 
-  var LabTestCollectionFormHelper = function(labTestCollection){
+  var LabTestFormHelper = function(labTest){
       var self = this;
-      if(!labTestCollection.lab_tests){
-        labTestCollection.lab_tests = [];
+      if(!labTest.observations){
+        labTest.observations = [];
       }
 
-      _.each(labTestCollection.lab_tests, function(lt){
+      _.each(labTest.observations, function(lt){
         if(!lt.date_ordered){
           lt.date_ordered = new Date();
         }
@@ -59,7 +59,7 @@ angular.module('opal.services').factory('LabTestCollectionFormHelper', function(
       });
 
       this.preSave = function(editing){
-        _.each(editing.lab_test_collection.lab_tests, function(lt){
+        _.each(editing.lab_test.observations, function(lt){
           _.each(dateFields, function(dt){
             if(lt[dt]){
                 lt[dt] = castFromDate(lt[dt]);
@@ -75,5 +75,5 @@ angular.module('opal.services').factory('LabTestCollectionFormHelper', function(
       };
   };
 
-  return LabTestCollectionFormHelper;
+  return LabTestFormHelper;
 });
