@@ -51,7 +51,29 @@ class LabTest(omodels.PatientSubrecord):
         # generic foreign keys aren't added at the moment
         # manually add it
         existing = super(LabTest, cls)._get_fieldnames_to_serialize()
+        existing.extend(cls.all_observation_fields())
         return existing
+
+    @classmethod
+    def observation_fields(cls):
+        return {i.name for i in cls.Observations._observation_types}
+
+    @classmethod
+    def _get_field_type(cls, name):
+        observation_fields = cls.observation_fields()
+        # TODO we need to fix this to do this properly
+        if name in observation_fields:
+            return "Char"
+        else:
+            return super(LabTest, cls)._get_field_type(name)
+
+    @classmethod
+    def all_observation_fields(cls):
+        result = {}
+        for test_class in _itersubclasses(cls):
+            result.update(test_class.observation_fields)
+
+        return result
 
     @classmethod
     def get_result_form(cls):
@@ -128,10 +150,6 @@ class LabTest(omodels.PatientSubrecord):
             observation = getattr(self.all_observations, observation_type.name)
             response[observation.name] = observation.to_dict(*args, **kwargs)
         return response
-
-    @cached_property
-    def all_observations(self):
-        return self.Observations
 
 
 class Observation(
@@ -221,18 +239,20 @@ class ObservationsMeta(type):
         return super(ObservationsMeta, cls).__new__(cls, name, bases, attrs)
 
     def __get__(cls, parent, *args, **kwargs):
-        instance = cls()
-        instance.parent = parent
-        observation_names = [i.name for i in cls._observation_types]
-        for i in cls._observation_types:
-            setattr(instance, i.name, copy(i))
-        existing_observations = instance.parent.observations.filter(
-            name__in=observation_names
-        )
-        instance._observation_types = cls._observation_types
-        for existing_observation in existing_observations:
-            setattr(instance, existing_observation.name, existing_observation)
-        return instance
+        if parent:
+            instance = cls()
+            instance.parent = parent
+            observation_names = [i.name for i in cls._observation_types]
+            for i in cls._observation_types:
+                setattr(instance, i.name, copy(i))
+            existing_observations = instance.parent.observations.filter(
+                name__in=observation_names
+            )
+            instance._observation_types = cls._observation_types
+            for existing_observation in existing_observations:
+                setattr(instance, existing_observation.name, existing_observation)
+            return instance
+        return cls
 
 
 class Observations(six.with_metaclass(ObservationsMeta)):
