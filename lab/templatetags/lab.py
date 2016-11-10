@@ -5,16 +5,6 @@ import json
 register = template.Library()
 
 
-@register.inclusion_tag('lab/_helpers/result_input.html')
-def test_result_input(lab_test, **kwargs):
-    return {"lab_test": lab_test}
-
-
-@register.inclusion_tag('lab/_helpers/result_radio.html')
-def test_result_radio(lab_test, **kwargs):
-    return {"lab_test": lab_test}
-
-
 @register.simple_tag()
 def render_observation(observation):
     form_template = observation.__class__.get_form_template()

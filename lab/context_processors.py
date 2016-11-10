@@ -10,8 +10,8 @@ class LabTestContextProcessor(object):
 
 class ObservationContextProcessor(object):
     def __init__(self):
-        for i in LabTest.list():
-            setattr(self, i.__name__, i)
+        for i in LabTest.all_observations():
+            setattr(self, i.name, i)
 
 
 def lab_tests(request):
