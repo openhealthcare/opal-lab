@@ -7,12 +7,12 @@ from django.db.models.base import ModelBase
 import opal.models as omodels
 from opal.utils import AbstractBase, _itersubclasses, camelcase_to_underscore
 from opal.utils import find_template
-from copy import copy
+import copy
 
 
-class InheritanceMetaclass(ModelBase):
+class CastToProxyClassMetaclass(ModelBase):
     def __call__(cls, *args, **kwargs):
-        obj = super(InheritanceMetaclass, cls).__call__(*args, **kwargs)
+        obj = super(CastToProxyClassMetaclass, cls).__call__(*args, **kwargs)
         return obj.get_object()
 
 class Observation(
@@ -21,7 +21,7 @@ class Observation(
     # we really shouldn't have to declare this
     _advanced_searchable = False
     _is_singleton = False
-    __metaclass__ = InheritanceMetaclass
+    __metaclass__ = CastToProxyClassMetaclass
 
     RESULT_CHOICES = ()
     consistency_token = models.CharField(max_length=8)
@@ -90,37 +90,6 @@ class Observation(
             "lab_tests/forms/observations/observation_base.html",
         ])
 
-#
-# class ObservationsMeta(type):
-#     def __new__(cls, name, bases, attrs):
-#         cls._observation_types = []
-#         for field_name, val in attrs.items():
-#             if issubclass(val.__class__, Observation):
-#                 val.name = field_name
-#                 val.observation_type = val.__class__.get_observation_class()
-#                 cls._observation_types.append(val)
-#         return super(ObservationsMeta, cls).__new__(cls, name, bases, attrs)
-#
-#     def __get__(cls, parent, *args, **kwargs):
-#         if parent:
-#             instance = cls()
-#             instance.parent = parent
-#             observation_names = [i.name for i in cls._observation_types]
-#             for i in cls._observation_types:
-#                 setattr(instance, i.name, copy(i))
-#             existing_observations = instance.parent.observations.filter(
-#                 name__in=observation_names
-#             )
-#             instance._observation_types = cls._observation_types
-#             for existing_observation in existing_observations:
-#                 setattr(instance, existing_observation.name, existing_observation)
-#             return instance
-#         return cls
-#
-#
-# class Observations(six.with_metaclass(ObservationsMeta)):
-#     pass
-
 
 class GenericObservation(Observation):
     class Meta:
@@ -148,19 +117,21 @@ class PosNegUnknown(Observation):
     )
 
 
-class LabTestMetaclass(InheritanceMetaclass):
+class LabTestMetaclass(CastToProxyClassMetaclass):
     def __new__(cls, name, bases, attrs):
-        new_cls = super(LabTestMetaclass, cls).__new__(cls, name, bases, attrs)
-        new_cls._observation_types = []
+        observation_fields = []
         for field_name, val in attrs.items():
-            # the class of Meta is understandable doesn't exist, skip that one
             attr_class = getattr(val, "__class__", None)
             if attr_class and issubclass(attr_class, Observation):
-                val.name = field_name
-                val.observation_type = val.__class__.get_observation_class()
-                new_cls._observation_types.append(val)
+                attrs.pop(field_name)
+                field_copy = copy.deepcopy(attr_class)
+                field_copy.name = field_name
+                observation_fields.append(field_copy)
 
+        new_cls = super(LabTestMetaclass, cls).__new__(cls, name, bases, attrs)
+        new_cls._observation_types = observation_fields
         return new_cls
+
 
 
 class LabTest(omodels.PatientSubrecord):
@@ -168,6 +139,7 @@ class LabTest(omodels.PatientSubrecord):
         a class that adds utitility methods for
         accessing an objects lab tests
     """
+
     STATUS_CHOICES = (
         ('pending', 'pending'),
         ('complete', 'complete'),
@@ -245,6 +217,13 @@ class LabTest(omodels.PatientSubrecord):
         return "lab_tests/forms/{}_form.html".format(cls.get_api_name())
 
     def get_object(self):
+        """
+            casts the class to the metaclass and instatiates either
+            empty observations, or existing observations
+
+            TODO what happens if the class is instatiated with one
+            of the proxy fields e.g. LabTest(pathology=pathology)
+        """
         if self.lab_test_type:
             lab_test_class = self.__class__.get_class_from_display_name(
                 self.lab_test_type
@@ -252,7 +231,23 @@ class LabTest(omodels.PatientSubrecord):
 
             if lab_test_class:
                 self.__class__ = lab_test_class
+
+        self.get_observations()
         return self
+
+    def get_observations(self):
+        existing = {}
+
+        if self.id:
+            observations = self.observations.all()
+            for observation in observations:
+                existing[observation.name] = observation
+
+        for observation in self.__class__._observation_types:
+            if observation.name in existing:
+                setattr(self, observation.name, existing[observation.name])
+            else:
+                setattr(self, observation.name, observation())
 
 
     # TODO these should be in a mixin somewhere
@@ -309,9 +304,13 @@ class LabTest(omodels.PatientSubrecord):
 
             to_save.update_from_dict(observation, user, **kwargs)
 
-    def to_dict(self, *args, **kwargs):
-        response = super(LabTest, self).to_dict(*args, **kwargs)
-        for observation_type in self.__class__.observation_fields():
-            observation = getattr(self, observation_type.name)
-            response[observation.name] = observation.to_dict(*args, **kwargs)
+    def to_dict(self, user, fields=None):
+        observation_names = set(self.__class__.all_observation_names())
+        if not fields:
+            fields = self._get_fieldnames_to_serialize()
+        fields = [field for field in fields if field not in observation_names]
+        response = super(LabTest, self).to_dict(user, fields=fields)
+        for observation_name in observation_names:
+            observation = getattr(self, observation_name)
+            response[observation_name] = observation.to_dict(user)
         return response
