@@ -1,6 +1,42 @@
 This is lab - an [OPAL](https://github.com/openhealthcare/opal) plugin.
 
+[![Build
+Status](https://travis-ci.org/openhealthcare/elcid.png)](https://travis-ci.org/openhealthcare/opal-lab)
+[![Coverage Status](https://coveralls.io/repos/github/openhealthcare/elcid/badge.svg?branch=master)](https://coveralls.io/github/openhealthcare/opal-lab?branch=default)
+
+
 ### Summary
+LabTests are an abstraction for the OPAL framework that allows for the inclusion of different types of test.
+
+To declare tests, you can just declare a proxy class that inherits from LabTest for example the below
+
+``` python
+  class Culture(LabTest):
+    organism = OrganismObservation()
+    sputum = PosNegObservation()
+```
+
+This serialises to editing.lab_tests
+
+``` javascript
+{
+  editing: {
+    lab_tests: [{
+      sputuem: [{
+        name: "sputuem",
+        observation_type: "PosNegUnknown",
+        result: "positive"
+      }],
+      organism: [{
+        name: "organism",
+        observation_type: "PosNegUnknown",
+        result: "negative"
+      }],
+    }]
+  }
+}
+```
+
 This is an abstraction for the OPAL framework that allows the inclusion of different types of test.
 
 Modelling lab tests presents a lot of challenges as there are literally thousands of different tests.
@@ -22,10 +58,6 @@ from lab.models import LabTest
 class CustomTest(LabTest):
   class Meta:
     proxy = True
-
-  def update_from_dict(self, *args, **kwargs):
-    # custom test logic
-
 ```
 
 If you save a lab_test with test_name "custom_test" for all it will use your custom logic when being deserialised.
@@ -48,19 +80,51 @@ class CustomTest(LabTest):
   )
 ```
 
-The Result Choices are brought through in the meta data as result_choices. This means in templates and controllers you can use constants such as metadata.custom_test.result_choices.orange to be 20mgs.
-
 Note in the database we store 20mgs, not orange
 
-When bringing in the lab test, bring in the template_context_processor 'lab.context_processors.lab_tests', this will make your lab tests available in templates within the lab_test name space, e.g. lab_test.CustomTest.
+Results fields are rendered using the template tag render_observation in lab, and will render the result choices as radio buttons
 
-lab tests can have their own tests, but also fall back to /templates/generic_lab_test.html.
+For example a form with an observation call pathology might be stated like the below.
 
-Lab test should be rendered with the 'render_lab_form' template tag, as this makes the LabTest class in question available in the template.
+```html
+  {% load lab %}
+  {% render_observation observations.pathology %}
+```
 
-To make LabTests easier to use we have a LabTestCollection. This can be extended by a subrecord and allows updating of and getting of lab tests. Note, test are all serialised to 'lab_test' by the to dict method. This is because its assumed you'll want the tests as a group.
+### Quick start
+add 'lab.context_processors.lab_tests', 'lab.context_processors.observations' to your template context preprocessors
+this will make your lab tests  available in the templates with the name space lab_tests, e.g. lab_tests.CustomTest for lab tests and observations available with the observsations name space e.g. observations.pathology.
 
-By default a LabTestCollection will delete all other tests that you have updated it with if they're not included, to switch this behaviour off, use _delete_others = False on your LabTestCollection
+now add some lab tests to your models, e.g.
+
+```python
+  class Smear(lmodels.LabTest):
+      pathology = lmodels.PosNegUnknown()
+
+      class Meta:
+          proxy = True
+
+
+  class HIV(lmodels.LabTest):
+    present = lmodels.PosNegUnknown()
+
+    class Meta:
+        proxy = True
+```
+
+run migrations. Now add a LabTest record panel to your detail page. You'll see by default when you add a lab test you get
+an input field which autocompletes to one of the above tests. Note you still need to add templates for the form templates.
+You do this by adding templates to /templates/lab_tests/forms/{{ test api name }}_form.html.
+
+e.g. create a file called /templates/lab_tests/forms/smear_form.html with
+```html
+  {% load lab %}
+  {% render_observation observations.pathology %}
+```
+
+Now in the record panel you should be able to click add, type in Smear and you should get a rendered form with the options for
+pathology of positive/negative/not known.
+
 
 ### Other fields on LabTest
 Tests often tell us if the organism they're testing is sensitive or resistant to certain antibiotics so we have a many to many field for these.
@@ -69,16 +133,7 @@ we have date ordered/date received and status fields which are self explanatory.
 
 A details json field on the element, allows the capture of miscellanious metadata
 
-### Template tags
-
-#### render_lab_form {{ model e.g. lab_test.Culture }}
-by default falls back to /templates/generic_lab_test.html, but will render any with from /templates/lab_test/forms/{{ api_name }}.html
-
-#### test_result_input {{ model e.g. lab_test.Culture }}
-this will render the result field as an input with the type ahead options defined in ResultChoices
-
-#### test_result_radio {{ model e.g. lab_test.Culture }}
-this will render the result field as an radio with the result choices
+ the result choices
 
 ### Metadata
-this brings in the field serialised data for each lab test, in the same way as the field structure of subrecord is serialised in Opal. simples.
+this brings in the field result template for each test.

@@ -1,61 +1,38 @@
+import six
 from jsonfield import JSONField
 from django.db import models
-from django.contrib.contenttypes.models import ContentType
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.contrib.contenttypes.fields import GenericRelation
+from django.db import transaction
 from django.core.urlresolvers import reverse
 from django.db.models.base import ModelBase
 import opal.models as omodels
 from opal.utils import AbstractBase, _itersubclasses, camelcase_to_underscore
 from opal.utils import find_template
+import copy
 
 
-def get_for_lookup_list(model, values):
-    ct = ContentType.objects.get_for_model(model)
-    return model.objects.filter(
-        models.Q(name__in=values) |
-        models.Q(synonyms__name__in=values, synonyms__content_type=ct)
-    )
-
-
-class InheritanceMetaclass(ModelBase):
+class CastToProxyClassMetaclass(ModelBase):
     def __call__(cls, *args, **kwargs):
-        obj = super(InheritanceMetaclass, cls).__call__(*args, **kwargs)
+        obj = super(CastToProxyClassMetaclass, cls).__call__(*args, **kwargs)
         return obj.get_object()
 
-
-class LabTest(omodels.UpdatesFromDictMixin, omodels.ToDictMixin, omodels.TrackedModel):
+class Observation(
+    omodels.UpdatesFromDictMixin, omodels.ToDictMixin, omodels.TrackedModel
+):
     # we really shouldn't have to declare this
     _advanced_searchable = False
     _is_singleton = False
-    __metaclass__ = InheritanceMetaclass
-
-    STATUS_CHOICES = (
-        ('pending', 'pending'),
-        ('complete', 'complete'),
-    )
+    __metaclass__ = CastToProxyClassMetaclass
 
     RESULT_CHOICES = ()
-
-    date_ordered = models.DateField(blank=True, null=True)
-    date_received = models.DateField(blank=True, null=True)
     consistency_token = models.CharField(max_length=8)
-    content_type = models.ForeignKey(ContentType)
-    object_id = models.PositiveIntegerField()
-    lab_test_collection = GenericForeignKey('content_type', 'object_id')
-    test_name = models.CharField(max_length=256)
+    observation_type = models.CharField(max_length=256)
     details = JSONField(blank=True, null=True)
+    lab_test = models.ForeignKey('LabTest', related_name='observations')
     result = models.CharField(
         blank=True,
         null=True,
         max_length=256,
         choices=RESULT_CHOICES
-    )
-    status = models.CharField(
-        blank=True,
-        null=True,
-        max_length=256,
-        choices=STATUS_CHOICES
     )
     sensitive_antibiotics = models.ManyToManyField(
         omodels.Antimicrobial, related_name="test_sensitive"
@@ -63,19 +40,24 @@ class LabTest(omodels.UpdatesFromDictMixin, omodels.ToDictMixin, omodels.Tracked
     resistant_antibiotics = models.ManyToManyField(
         omodels.Antimicrobial, related_name="test_resistant"
     )
+    name = models.CharField(max_length=255)
 
     def get_object(self):
-        if self.test_name:
-            test_class = self.__class__.get_class_from_test_name(
-                self.test_name
+        if self.observation_type:
+            observation_class = self.__class__.get_class_from_observation_type(
+                self.observation_type
             )
 
-            if test_class:
-                self.__class__ = test_class
+            if observation_class:
+                self.__class__ = observation_class
+
         return self
 
     def get_result_look_up_list(self):
         return [i[1] for i in self.RESULT_CHOICES]
+
+    def to_dict(self, *args, **kwargs):
+        return dict(result=self.result)
 
     @classmethod
     def list(cls):
@@ -84,59 +66,37 @@ class LabTest(omodels.UpdatesFromDictMixin, omodels.ToDictMixin, omodels.Tracked
                 yield test_class
 
     @classmethod
-    def get_class_from_test_name(cls, test_name):
+    def get_class_from_observation_type(cls, observation_type):
         for test_class in _itersubclasses(cls):
-            if test_class.get_display_name() == test_name:
+            if test_class.get_observation_class() == observation_type:
                 return test_class
 
-    def save(self, *args, **kwargs):
-        if not self.test_name:
-            if not isinstance(models.Model, AbstractBase):
-                self.test_name = self.__class__.get_display_name()
-
-        return super(LabTest, self).save(*args, **kwargs)
-
-    # TODO these should be in a mixin somewhere
     @classmethod
-    def get_api_name(cls):
-        return camelcase_to_underscore(cls._meta.object_name)
+    def get_observation_class(cls):
+        return cls._meta.object_name
 
-    @classmethod
-    def get_display_name(cls):
-        if hasattr(cls, '_title'):
-            return cls._title
-        else:
-            return cls._meta.verbose_name.title()
+    def get_display_name(self):
+        return self.name.title()
 
     @classmethod
     def get_form_url(cls):
-        return reverse("lab_test_results_view", kwargs=dict(model=cls.get_api_name()))
+        return reverse(
+            "lab_test_results_view", kwargs=dict(model=cls.get_api_name())
+        )
 
     @classmethod
     def get_form_template(cls):
         return find_template([
-            "lab_tests/forms/{}_form.html".format(cls.get_api_name()),
-            "lab_tests/forms/generic_lab_test.html",
+            "lab_tests/forms/observations/observation_base.html",
         ])
 
-    def update_from_dict(self, data, user, **kwargs):
-        fields = set(self.__class__._get_fieldnames_to_serialize())
 
-        # for now lets not save the details
-        fields.remove('details')
-        details = data.pop("details", {})
-        if details:
-            self.details = details
-
-        super(LabTest, self).update_from_dict(data, user, fields=fields, **kwargs)
-
-
-class GenericLabTest(LabTest):
+class GenericObservation(Observation):
     class Meta:
         proxy = True
 
 
-class PosNegLabTest(LabTest, AbstractBase):
+class PosNeg(Observation):
     class Meta:
         proxy = True
 
@@ -146,62 +106,211 @@ class PosNegLabTest(LabTest, AbstractBase):
     )
 
 
-class LabTestCollection(models.Model):
+class PosNegUnknown(Observation):
+    class Meta:
+        proxy = True
+
+    RESULT_CHOICES = (
+        ("positive", "+ve"),
+        ("negative", "-ve"),
+        ("unknown", "unknown"),
+    )
+
+
+class LabTestMetaclass(CastToProxyClassMetaclass):
+    def __new__(cls, name, bases, attrs):
+        observation_fields = []
+        for field_name, val in attrs.items():
+            attr_class = getattr(val, "__class__", None)
+            if attr_class and issubclass(attr_class, Observation):
+                attrs.pop(field_name)
+                field_copy = copy.deepcopy(attr_class)
+                field_copy.name = field_name
+                observation_fields.append(field_copy)
+
+        new_cls = super(LabTestMetaclass, cls).__new__(cls, name, bases, attrs)
+        new_cls._observation_types = observation_fields
+        return new_cls
+
+
+
+class LabTest(omodels.PatientSubrecord):
     """
         a class that adds utitility methods for
         accessing an objects lab tests
     """
 
-    _angular_service = 'LabTestCollectionRecord'
+    STATUS_CHOICES = (
+        ('pending', 'pending'),
+        ('complete', 'complete'),
+    )
 
-    # include other if you want to allow for adding a test
-    _possible_tests = []
-    _delete_others = True
+    status = models.CharField(
+        blank=True,
+        null=True,
+        max_length=256,
+        choices=STATUS_CHOICES
+    )
+    lab_test_type = models.CharField(max_length=256, blank=True, null=True)
+    date_ordered = models.DateField(blank=True, null=True)
+    date_received = models.DateField(blank=True, null=True)
+    details = JSONField(blank=True, null=True)
 
-    class Meta:
-        abstract = True
+    __metaclass__ = LabTestMetaclass
 
-    lab_tests = GenericRelation(LabTest)
-
-    def get_possible_tests(self):
-        return self._possible_tests
+    @classmethod
+    def list(cls):
+        return _itersubclasses(cls)
 
     @classmethod
     def _get_fieldnames_to_serialize(cls):
         # generic foreign keys aren't added at the moment
         # manually add it
-        existing = super(LabTestCollection, cls)._get_fieldnames_to_serialize()
-        existing.append("lab_tests")
+        existing = super(LabTest, cls)._get_fieldnames_to_serialize()
+        existing.extend(cls.all_observation_names())
         return existing
 
-    def save_tests(self, tests, user):
-        ct = ContentType.objects.get_for_model(self.__class__)
-        object_id = self.id
-        relevent_lab_tests = self.lab_tests.all()
+    @classmethod
+    def observation_fields(cls):
+        return cls._observation_types
 
-        if(self._delete_others):
-            ids = [test["id"] for test in tests if "id" in test]
-            to_delete = relevent_lab_tests.exclude(id__in=ids)
-            to_delete.delete()
+    @classmethod
+    def all_observations(cls):
+        # not we explicitly use LabTest so we get everything from the parent class
+        # down
+        for c in LabTest.list():
+            for i in c.observation_fields():
+                yield i
 
-        for test in tests:
-            if "id" in test:
-                # TODO if the test has been deleted in the mean time
-                # this will throw
-                test_obj = relevent_lab_tests.get(id=test["id"])
+    @classmethod
+    def all_observation_names(cls):
+        for i in cls.all_observations():
+            yield i.name
+
+    @classmethod
+    def get_observation_from_name(cls, name):
+        for i in cls.all_observations():
+            if i.name == name:
+                return i
+
+    @classmethod
+    def _get_field_type(cls, name):
+        # TODO we need to fix this to do this properly
+        observation = cls.get_observation_from_name(name)
+        if observation:
+            return observation.__class__
+        else:
+            return super(LabTest, cls)._get_field_type(name)
+
+    @classmethod
+    def _get_field_title(cls, name):
+        observation = cls.get_observation_from_name(name)
+
+        if observation:
+            # TODO, this needs to be settable
+            return observation.name.title()
+        else:
+            return super(LabTest, cls)._get_field_title(name)
+
+    @classmethod
+    def get_result_form(cls):
+        return "lab_tests/forms/{}_form.html".format(cls.get_api_name())
+
+    def get_object(self):
+        """
+            casts the class to the metaclass and instatiates either
+            empty observations, or existing observations
+
+            TODO what happens if the class is instatiated with one
+            of the proxy fields e.g. LabTest(pathology=pathology)
+        """
+        if self.lab_test_type:
+            lab_test_class = self.__class__.get_class_from_display_name(
+                self.lab_test_type
+            )
+
+            if lab_test_class:
+                self.__class__ = lab_test_class
+
+        self.get_observations()
+        return self
+
+    def get_observations(self):
+        existing = {}
+
+        if self.id:
+            observations = self.observations.all()
+            for observation in observations:
+                existing[observation.name] = observation
+
+        for observation in self.__class__._observation_types:
+            if observation.name in existing:
+                setattr(self, observation.name, existing[observation.name])
             else:
-                test_obj = LabTest()
-                test_obj.content_type = ct
-                test_obj.object_id = object_id
-            test_obj.update_from_dict(test, user)
+                setattr(self, observation.name, observation())
 
+
+    # TODO these should be in a mixin somewhere
+    @classmethod
+    def get_api_name(cls):
+        return camelcase_to_underscore(cls._meta.object_name)
+
+    @classmethod
+    def get_result_form_url(cls):
+        return reverse("lab_form_view", kwargs=dict(model=cls.get_api_name()))
+
+    @classmethod
+    def get_class_from_display_name(cls, lab_test_type):
+        for test_class in _itersubclasses(cls):
+            if test_class.get_display_name() == lab_test_type:
+                return test_class
+
+    @classmethod
+    def get_class_from_api_name(cls, lab_test_type):
+        for test_class in _itersubclasses(cls):
+            if test_class.get_api_name() == lab_test_type:
+                return test_class
+
+    @transaction.atomic()
     def update_from_dict(self, data, user, **kwargs):
         """ lab tests are foreign keys so have to be saved
             after the initial set of tests
         """
-        lab_tests = data.pop('lab_tests', [])
-        super(LabTestCollection, self).update_from_dict(data, user, **kwargs)
-        self.save_tests(lab_tests, user)
+        observation_data = []
 
-    def get_lab_tests(self, user):
-        return [i.to_dict(user) for i in self.lab_tests.all()]
+        # cast us to the correct type
+        self.lab_test_type = data["lab_test_type"]
+        self.get_object()
+
+        for observation in self.__class__.observation_fields():
+            od = data.pop(observation.name)
+            od["name"] = observation.name
+            observation_data.append(od)
+
+        super(LabTest, self).update_from_dict(data, user, **kwargs)
+
+        existing_observations = [
+            o["id"] for o in observation_data if "id" in o
+        ]
+
+        self.observations.exclude(id__in=existing_observations).delete()
+
+        for observation in observation_data:
+            if "id" in observation:
+                to_save = observation.get(id=observation["id"])
+            else:
+                to_save = getattr(self, observation["name"])
+                to_save.lab_test_id = self.id
+
+            to_save.update_from_dict(observation, user, **kwargs)
+
+    def to_dict(self, user, fields=None):
+        observation_names = set(self.__class__.all_observation_names())
+        if not fields:
+            fields = self._get_fieldnames_to_serialize()
+        fields = [field for field in fields if field not in observation_names]
+        response = super(LabTest, self).to_dict(user, fields=fields)
+        for observation_name in observation_names:
+            observation = getattr(self, observation_name)
+            response[observation_name] = observation.to_dict(user)
+        return response

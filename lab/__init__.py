@@ -13,12 +13,12 @@ class LabPlugin(plugins.OpalPlugin):
     javascripts = {
         # Add your javascripts here!
         'opal.controllers': [
-            'js/lab/controllers/forms/lab_test_collection_record_form.js',
+            'js/lab/controllers/forms/lab_test_record_form.js',
             'js/lab/directives.js',
         ],
         'opal.services': [
-            'js/lab/services/records/lab_test_collection_record.js',
-            'js/lab/services/lab_test_collection_form_helper.js',
+            'js/lab/services/records/lab_test_record.js',
+            'js/lab/services/lab_test_form_helper.js',
         ]
     }
 
