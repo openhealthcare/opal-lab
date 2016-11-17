@@ -52,9 +52,9 @@ This is an abstraction for the OPAL framework that allows the inclusion of diffe
 Modelling lab tests presents a lot of challenges as there are literally thousands
 of different tests.
 
-These tests have results particular to them, and sometimes additional meta data.
+These tests have results particular to them, and sometimes additional metadata.
 
-Given we don't want to model all of these as seperate sql tables we use a Django
+Given we don't want to model all of these as seperate SQL tables we use a Django
 proxy model abstraction.
 
 The `LabTest` class is the parent of the test proxy models. It's generic enough that
@@ -107,7 +107,6 @@ For example a form with an observation call pathology might be stated like the b
   {% load lab %}
   {% render_observation observations.pathology %}
 ```
-
 
 Add 'lab.context_processors.lab_tests', 'lab.context_processors.observations' to your template context preprocessors.
 
