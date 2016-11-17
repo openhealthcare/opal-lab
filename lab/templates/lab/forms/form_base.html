@@ -1,1 +1,4 @@
-{% include lab_test.get_result_form %}
+{% load lab %}
+{% for observation in lab_test.get_observations %}
+  {% render_observation observation %}
+{% endfor %}

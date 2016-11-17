@@ -5,6 +5,7 @@ from django.db import transaction
 from django.core.urlresolvers import reverse
 from django.db.models.base import ModelBase
 import opal.models as omodels
+from opal.utils import find_template
 from opal.utils import AbstractBase, _itersubclasses, camelcase_to_underscore
 from opal.utils import find_template
 import copy
@@ -14,6 +15,7 @@ class CastToProxyClassMetaclass(ModelBase):
     def __call__(cls, *args, **kwargs):
         obj = super(CastToProxyClassMetaclass, cls).__call__(*args, **kwargs)
         return obj.get_object()
+
 
 class Observation(
     omodels.UpdatesFromDictMixin, omodels.ToDictMixin, omodels.TrackedModel
@@ -53,11 +55,9 @@ class Observation(
 
         return self
 
-    def get_result_look_up_list(self):
-        return [i[1] for i in self.RESULT_CHOICES]
-
-    def to_dict(self, *args, **kwargs):
-        return dict(result=self.result)
+    @classmethod
+    def get_result_look_up_list(cls):
+        return [i[1] for i in cls.RESULT_CHOICES]
 
     @classmethod
     def list(cls):
@@ -87,7 +87,7 @@ class Observation(
     @classmethod
     def get_form_template(cls):
         return find_template([
-            "lab_tests/forms/observations/observation_base.html",
+            "lab/forms/observations/observation_base.html",
         ])
 
 
@@ -126,12 +126,12 @@ class LabTestMetaclass(CastToProxyClassMetaclass):
                 attrs.pop(field_name)
                 field_copy = copy.deepcopy(attr_class)
                 field_copy.name = field_name
+                attrs[field_name] = field_copy
                 observation_fields.append(field_copy)
 
         new_cls = super(LabTestMetaclass, cls).__new__(cls, name, bases, attrs)
         new_cls._observation_types = observation_fields
         return new_cls
-
 
 
 class LabTest(omodels.PatientSubrecord):
@@ -214,7 +214,16 @@ class LabTest(omodels.PatientSubrecord):
 
     @classmethod
     def get_result_form(cls):
-        return "lab_tests/forms/{}_form.html".format(cls.get_api_name())
+        return find_template([
+            "lab_tests/forms/{}_form.html".format(cls.get_api_name()),
+            "lab/forms/form_base.html"
+        ])
+
+    @classmethod
+    def get_record(cls):
+        return find_template([
+            "lab_tests/records/{}.html".format(cls.get_api_name()),
+        ])
 
     def get_object(self):
         """
@@ -232,11 +241,12 @@ class LabTest(omodels.PatientSubrecord):
             if lab_test_class:
                 self.__class__ = lab_test_class
 
-        self.get_observations()
+        self.set_observations()
         return self
 
     def get_observations(self):
         existing = {}
+        result = []
 
         if self.id:
             observations = self.observations.all()
@@ -245,10 +255,15 @@ class LabTest(omodels.PatientSubrecord):
 
         for observation in self.__class__._observation_types:
             if observation.name in existing:
-                setattr(self, observation.name, existing[observation.name])
+                result.append(existing[observation.name])
             else:
-                setattr(self, observation.name, observation())
+                result.append(observation(name=observation.name))
 
+        return result
+
+    def set_observations(self):
+        for observation in self.get_observations():
+            setattr(self, observation.name, observation)
 
     # TODO these should be in a mixin somewhere
     @classmethod
@@ -258,6 +273,10 @@ class LabTest(omodels.PatientSubrecord):
     @classmethod
     def get_result_form_url(cls):
         return reverse("lab_form_view", kwargs=dict(model=cls.get_api_name()))
+
+    @classmethod
+    def get_record_url(cls):
+        return reverse("record_view", kwargs=dict(model=cls.get_api_name()))
 
     @classmethod
     def get_class_from_display_name(cls, lab_test_type):
@@ -297,7 +316,7 @@ class LabTest(omodels.PatientSubrecord):
 
         for observation in observation_data:
             if "id" in observation:
-                to_save = observation.get(id=observation["id"])
+                to_save = self.observations.get(id=observation["id"])
             else:
                 to_save = getattr(self, observation["name"])
                 to_save.lab_test_id = self.id

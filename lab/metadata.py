@@ -7,10 +7,12 @@ class LabTestMetadata(metadata.Metadata):
 
     @classmethod
     def to_dict(klass, **kw):
-        result = dict(lab_tests={})
+        result = dict(lab_tests={"all_tests": []})
 
         for lab_test in LabTest.list():
             result["lab_tests"][lab_test.get_display_name()] = dict(
-                template_url=lab_test.get_result_form_url()
+                result_form_url=lab_test.get_result_form_url(),
+                record_url=lab_test.get_record_url()
             )
+            result["lab_tests"]["all_tests"].append(lab_test.get_display_name())
         return result

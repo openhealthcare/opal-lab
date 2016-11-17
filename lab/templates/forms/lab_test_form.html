@@ -1,3 +1,4 @@
 {% load forms %}
-{% input label="Test type" model="editing.lab_test.lab_test_type" lookuplist="['Smear']" %}
-<div ng-include src="metadata.lab_tests[editing.lab_test.lab_test_type].template_url"></div>
+{% input label="Test type" model="editing.lab_test.lab_test_type" lookuplist="metadata.lab_tests.all_tests" %}
+
+<div ng-include src="metadata.lab_tests[editing.lab_test.lab_test_type].result_form_url"></div>
