@@ -324,6 +324,8 @@ class LabTest(omodels.PatientSubrecord):
             to_save.update_from_dict(observation, user, **kwargs)
 
     def to_dict(self, user, fields=None):
+        # TODO observations should refresh when changed
+        self.set_observations()
         observation_names = set(self.__class__.all_observation_names())
         if not fields:
             fields = self._get_fieldnames_to_serialize()
