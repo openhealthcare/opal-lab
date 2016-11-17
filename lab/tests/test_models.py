@@ -1,5 +1,6 @@
 from opal.core.test import OpalTestCase
 from lab.models import LabTest
+from lab.tests.models import Smear, SampleTest
 
 
 class TestLabTestSave(OpalTestCase):
@@ -34,3 +35,13 @@ class TestLabTestSave(OpalTestCase):
         obs.save()
         result = lab_test.to_dict(self.user)
         self.assertEqual(result["pathology"]["result"], "-ve")
+
+
+class TestVerboseName(OpalTestCase):
+    def test_get_display_name(self):
+        self.assertEqual(Smear.pathology.get_display_name(), "Pathology")
+
+    def test_get_display_name_when_verbose_name_is_set(self):
+        self.assertEqual(
+            SampleTest.some_observation.get_display_name(), "Verbose Name"
+        )

@@ -1,2 +1,5 @@
+{% load lab %}
 <strong>[[ item.lab_test_type ]]</strong>
-pathology: [[ item.pathology.result ]]
+{% for observation in lab_test.retrieve_observations %}
+  {{ observation.get_display_name }}: [[ item.{{ observation.name }}.result ]]
+{% endfor %}

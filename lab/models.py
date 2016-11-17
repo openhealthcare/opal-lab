@@ -39,6 +39,10 @@ class Observation(
 
     name = models.CharField(max_length=255)
 
+    def __init__(self, *args, **kwargs):
+        self.verbose_name = kwargs.pop("verbose_name", None)
+        super(Observation, self).__init__(*args, **kwargs)
+
     def get_object(self):
         if self.observation_type:
             observation_class = self.__class__.get_class_from_observation_type(
@@ -71,7 +75,12 @@ class Observation(
         return cls._meta.object_name
 
     def get_display_name(self):
-        return self.name.title()
+        field_name = self.verbose_name
+
+        if field_name.islower():
+            field_name = field_name.title()
+
+        return field_name
 
     @classmethod
     def get_form_url(cls):
@@ -84,6 +93,18 @@ class Observation(
         return find_template([
             "lab/forms/observations/observation_base.html",
         ])
+
+    def set_attributes_from_name(self, name):
+        """
+            sets the name and the verbose name
+
+            pretty much exactly the same as the django method
+            of the same name, without some of the things we don't need.
+        """
+        if not self.name:
+            self.name = name
+        if self.verbose_name is None and self.name:
+            self.verbose_name = self.name.replace('_', ' ')
 
 
 class GenericObservation(Observation):
@@ -119,10 +140,9 @@ class LabTestMetaclass(CastToProxyClassMetaclass):
             attr_class = getattr(val, "__class__", None)
             if attr_class and issubclass(attr_class, Observation):
                 attrs.pop(field_name)
-                field_copy = copy.deepcopy(attr_class)
-                field_copy.name = field_name
-                attrs[field_name] = field_copy
-                observation_fields.append(field_copy)
+                val.set_attributes_from_name(field_name)
+                attrs[field_name] = val
+                observation_fields.append(val)
 
         new_cls = super(LabTestMetaclass, cls).__new__(cls, name, bases, attrs)
         new_cls._observation_types = observation_fields
@@ -260,10 +280,9 @@ class LabTest(omodels.PatientSubrecord):
             if observation.name in existing:
                 result.append(existing[observation.name])
             else:
-                result.append(observation(
-                    name=observation.name,
-                    lab_test=self,
-                ))
+                new_obs = copy.deepcopy(observation)
+                new_obs.lab_test = self
+                result.append(new_obs)
 
         return result
 

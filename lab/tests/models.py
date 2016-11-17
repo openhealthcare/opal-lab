@@ -7,8 +7,9 @@ class Smear(models.LabTest):
     class Meta:
         proxy = True
 
-class Culture(models.LabTest):
-    genome = models.PosNeg()
+
+class SampleTest(models.LabTest):
+    some_observation = models.PosNeg(verbose_name="Verbose Name")
 
     class Meta:
         proxy = True
