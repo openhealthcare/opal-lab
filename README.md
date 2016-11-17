@@ -7,9 +7,10 @@ Status](https://travis-ci.org/openhealthcare/elcid.png)](https://travis-ci.org/o
 
 
 ### Summary
+
 LabTests are an abstraction for the OPAL framework that allows for the inclusion of different types of test.
 
-To declare tests, you can just declare a proxy class that inherits from LabTest for example the below
+To declare tests, you can just declare a proxy class that inherits from LabTest for example:
 
 ``` python
   class Culture(LabTest):
@@ -23,8 +24,9 @@ This serialises to editing.lab_tests
 {
   editing: {
     lab_tests: [{
+      name: "culture",
       sputuem: [{
-        name: "sputuem",
+        name: "sputum",
         observation_type: "PosNegUnknown",
         result: "positive"
       }],
@@ -44,7 +46,6 @@ This is an abstraction for the OPAL framework that allows the inclusion of diffe
 
 1. Run setup.py
 2. Add to installed Apps
-
 
 ### Quick start
 
