@@ -114,13 +114,8 @@ now add some lab tests to your models, e.g.
 
 run migrations. Now add a LabTest record panel to your detail page. You'll see by default when you add a lab test you get
 an input field which autocompletes to one of the above tests. Note you still need to add templates for the form templates.
-You do this by adding templates to /templates/lab_tests/forms/{{ test api name }}_form.html.
 
-e.g. create a file called /templates/lab_tests/forms/smear_form.html with
-```html
-  {% load lab %}
-  {% render_observation observations.pathology %}
-```
+templates should be generated automatically from the observations.
 
 Now in the record panel you should be able to click add, type in Smear and you should get a rendered form with the options for
 pathology of positive/negative/not known.
