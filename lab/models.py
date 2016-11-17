@@ -36,12 +36,7 @@ class Observation(
         max_length=256,
         choices=RESULT_CHOICES
     )
-    sensitive_antibiotics = models.ManyToManyField(
-        omodels.Antimicrobial, related_name="test_sensitive"
-    )
-    resistant_antibiotics = models.ManyToManyField(
-        omodels.Antimicrobial, related_name="test_resistant"
-    )
+
     name = models.CharField(max_length=255)
 
     def get_object(self):
@@ -156,6 +151,13 @@ class LabTest(omodels.PatientSubrecord):
     date_received = models.DateField(blank=True, null=True)
     details = JSONField(blank=True, null=True)
 
+    sensitive_antibiotics = models.ManyToManyField(
+        omodels.Antimicrobial, related_name="test_sensitive"
+    )
+    resistant_antibiotics = models.ManyToManyField(
+        omodels.Antimicrobial, related_name="test_resistant"
+    )
+
     __metaclass__ = LabTestMetaclass
 
     @classmethod
@@ -223,6 +225,7 @@ class LabTest(omodels.PatientSubrecord):
     def get_record(cls):
         return find_template([
             "lab_tests/records/{}.html".format(cls.get_api_name()),
+            "lab/records/record_base.html"
         ])
 
     def get_object(self):
@@ -241,10 +244,10 @@ class LabTest(omodels.PatientSubrecord):
             if lab_test_class:
                 self.__class__ = lab_test_class
 
-        self.set_observations()
+        self.refresh_observations()
         return self
 
-    def get_observations(self):
+    def retrieve_observations(self):
         existing = {}
         result = []
 
@@ -257,12 +260,15 @@ class LabTest(omodels.PatientSubrecord):
             if observation.name in existing:
                 result.append(existing[observation.name])
             else:
-                result.append(observation(name=observation.name))
+                result.append(observation(
+                    name=observation.name,
+                    lab_test=self,
+                ))
 
         return result
 
-    def set_observations(self):
-        for observation in self.get_observations():
+    def refresh_observations(self):
+        for observation in self.retrieve_observations():
             setattr(self, observation.name, observation)
 
     # TODO these should be in a mixin somewhere
@@ -276,7 +282,7 @@ class LabTest(omodels.PatientSubrecord):
 
     @classmethod
     def get_record_url(cls):
-        return reverse("record_view", kwargs=dict(model=cls.get_api_name()))
+        return reverse("lab_record_view", kwargs=dict(model=cls.get_api_name()))
 
     @classmethod
     def get_class_from_display_name(cls, lab_test_type):
@@ -325,13 +331,13 @@ class LabTest(omodels.PatientSubrecord):
 
     def to_dict(self, user, fields=None):
         # TODO observations should refresh when changed
-        self.set_observations()
-        observation_names = set(self.__class__.all_observation_names())
+        observations = self.retrieve_observations()
+        observation_names = set(i.name for i in observations)
         if not fields:
             fields = self._get_fieldnames_to_serialize()
-        fields = [field for field in fields if field not in observation_names]
+
+        fields = [field for field in fields if field not in observation_names and hasattr(self, field)]
         response = super(LabTest, self).to_dict(user, fields=fields)
-        for observation_name in observation_names:
-            observation = getattr(self, observation_name)
-            response[observation_name] = observation.to_dict(user)
+        for observation in observations:
+            response[observation.name] = observation.to_dict(user)
         return response

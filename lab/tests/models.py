@@ -6,3 +6,9 @@ class Smear(models.LabTest):
 
     class Meta:
         proxy = True
+
+class Culture(models.LabTest):
+    genome = models.PosNeg()
+
+    class Meta:
+        proxy = True

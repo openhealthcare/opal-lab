@@ -1,4 +1,4 @@
 {% load lab %}
-{% for observation in lab_test.get_observations %}
+{% for observation in lab_test.retrieve_observations %}
   {% render_observation observation %}
 {% endfor %}

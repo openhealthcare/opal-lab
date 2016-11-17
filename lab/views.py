@@ -26,10 +26,7 @@ class AbstractLabTestView(LoginRequiredMixin, TemplateView):
 
 class LabTestResultTemplateView(AbstractLabTestView):
     """
-    This view renders the form template for our field.
-
-    These are generated for subrecords, but can also be used
-    by plugins for other mdoels.
+    This view renders the form template for our lab test.
     """
     def get_template_names(self):
         return self.lab_test.get_result_form()
@@ -37,10 +34,7 @@ class LabTestResultTemplateView(AbstractLabTestView):
 
 class LabTestRecordTemplateView(AbstractLabTestView):
     """
-    This view renders the form template for our field.
-
-    These are generated for subrecords, but can also be used
-    by plugins for other mdoels.
+    This view renders the record template for our lab test.
     """
     def get_template_names(self):
         return self.lab_test.get_record()

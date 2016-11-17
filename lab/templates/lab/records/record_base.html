@@ -1,7 +1,2 @@
-{% load lab %}
-{% comment %}
-do this better...
-{% endcomment %}
-<div ng-show="observation.observation_type">
-  [[ observation.name ]]: [[ observation.result ]]
-</div>
+<strong>[[ item.lab_test_type ]]</strong>
+pathology: [[ item.pathology.result ]]
