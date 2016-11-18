@@ -64,19 +64,41 @@ use generated forms easily.
 The LabTest uses the `test_name` field as the api name for whatever you've inherited from
 it. This is then cast into that class.
 
-e.g. if you have a class Smear
+e.g. if you have a class CustomTest
 
 ```python
-# settings.py
+# models.py
 from lab.models import LabTest
 
 class CustomTest(LabTest):
-  class Meta:
-    proxy = True
+  pass
 ```
 
 If you save a lab_test with test_name "custom_test" for all it will use your custom
 logic when being deserialised.
+
+we can now add observations to CustomTest
+
+```python
+# models.py
+from lab.models import LabTest, PendingPosNeg
+
+class CustomTest(LabTest):
+  issue = PendingPosNeg()
+```
+
+this adds an observation with the name 'issue' from one of the observation fields that lab
+test ships with. This adds the choices 'pending', 'positive', 'negative' to the form
+
+Its equivalent to
+
+```python
+# models.py
+from lab.models import LabTest, PendingPosNeg
+
+class CustomTest(LabTest):
+  issue = DynamicResultChoices('pending', '+ve', '-ve')
+```
 
 Further to this as noted, if we want to add a custom results set as RESULT_CHOICES
 on your model
@@ -84,17 +106,11 @@ e.g.
 
 
 ```python
-# settings.py
-from lab.models import LabTest
+# models.py
+from lab.models import LabTest, PendingPosNeg
 
 class CustomTest(LabTest):
-  class Meta:
-    proxy = True
-
-  RESULT_CHOICES = (
-    ('orange', '20mg'),
-    ('yellow', '30mg'),
-  )
+  issue = PendingPosNeg()
 ```
 
 Note in the database we store 20mgs, not orange

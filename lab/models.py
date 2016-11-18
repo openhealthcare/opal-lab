@@ -24,6 +24,7 @@ class Observation(
     _advanced_searchable = False
     _is_singleton = False
     __metaclass__ = CastToProxyClassMetaclass
+    lookup_list = None
 
     RESULT_CHOICES = ()
     consistency_token = models.CharField(max_length=8)
@@ -54,9 +55,8 @@ class Observation(
 
         return self
 
-    @classmethod
-    def get_result_look_up_list(cls):
-        return [i[1] for i in cls.RESULT_CHOICES]
+    def get_result_look_up_list(self):
+        return [i[1] for i in self.RESULT_CHOICES]
 
     @classmethod
     def list(cls):
@@ -82,11 +82,9 @@ class Observation(
 
         return field_name
 
-    @classmethod
-    def get_form_url(cls):
-        return reverse(
-            "lab_test_results_view", kwargs=dict(model=cls.get_api_name())
-        )
+    def get_lookup_list_model_name(self):
+        if self.lookup_list:
+            return "{}_list".format(self.lookup_list.get_api_name())
 
     @classmethod
     def get_form_template(cls):
@@ -105,11 +103,6 @@ class Observation(
             self.name = name
         if self.verbose_name is None and self.name:
             self.verbose_name = self.name.replace('_', ' ')
-
-
-class GenericObservation(Observation):
-    class Meta:
-        proxy = True
 
 
 class PosNeg(Observation):
@@ -132,9 +125,91 @@ class PosNegUnknown(Observation):
         ("unknown", "unknown"),
     )
 
+class PendingPosNeg(Observation):
+    class Meta:
+        proxy = True
+
+    RESULT_CHOICES = (
+        ("pending", "pending"),
+        ("positive", "+ve"),
+        ("negative", "-ve"),
+    )
+
+
+class PosNegEquivicalNotDone(Observation):
+    class Meta:
+        proxy = True
+
+    RESULT_CHOICES = (
+        ("pending", "pending"),
+        ("positive", "+ve"),
+        ("negative", "-ve"),
+        ("equivocal", "equivocal"),
+        ("not done", "not done"),
+    )
+
+class GenericInput(Observation):
+    class Meta:
+        proxy = True
+
+
+class Antimicrobial(Observation):
+    class Meta:
+        proxy = True
+
+    lookup_list = omodels.Antimicrobial
+
+class Organism(Observation):
+    class Meta:
+        proxy = True
+
+    lookup_list = omodels.Microbiology_organism
+
+class DynamicResultChoices(Observation):
+    """
+        this type of observation has its result choices populated in init
+    """
+    class Meta:
+        proxy = True
+
+    def __init__(self, *args, **kwargs):
+        self.result_choices = kwargs.pop("result_choices")
+        return super(DynamicResultChoices, self).__init__(*args, **kwargs)
+
+    def get_result_look_up_list(self):
+        return self.result_choices
+
+class DynamicLookupList(Observation):
+    """
+        this type of observation allows you to add the lookup list in init
+    """
+    class Meta:
+        proxy = True
+
+    def __init__(self, *args, **kwargs):
+        self.lookup_list = kwargs.pop("lookup_list")
+        return super(DynamicLookupList, self).__init__(*args, **kwargs)
+
+
+class DefaultLabTestMeta(object):
+    proxy = True
+
 
 class LabTestMetaclass(CastToProxyClassMetaclass):
     def __new__(cls, name, bases, attrs):
+        attrs_meta = attrs.get('Meta', None)
+
+        # TODO maybe a better way of doing this...
+        # We don't want to add the proxy message if its a the
+        # concrete model
+        if not name == 'LabTest':
+            if not attrs_meta:
+                attrs_meta = DefaultLabTestMeta
+            else:
+                attrs_meta.proxy = True
+
+            attrs["Meta"] = attrs_meta
+
         observation_fields = []
         for field_name, val in attrs.items():
             attr_class = getattr(val, "__class__", None)
@@ -159,6 +234,12 @@ class LabTest(omodels.PatientSubrecord):
         ('pending', 'pending'),
         ('complete', 'complete'),
     )
+
+    # show the sensitive antimicrobial field
+    POTENTIALLY_SENSITIVE = False
+
+    # show the resistent antimicrobial field
+    POTENTIALLY_RESISTANT = False
 
     status = models.CharField(
         blank=True,
@@ -340,7 +421,7 @@ class LabTest(omodels.PatientSubrecord):
         self.observations.exclude(id__in=existing_observations).delete()
 
         for observation in observation_data:
-            if "id" in observation:
+            if observation.get("id", None):
                 to_save = self.observations.get(id=observation["id"])
             else:
                 to_save = getattr(self, observation["name"])
@@ -348,8 +429,10 @@ class LabTest(omodels.PatientSubrecord):
 
             to_save.update_from_dict(observation, user, **kwargs)
 
-    def to_dict(self, user, fields=None):
         # TODO observations should refresh when changed
+        self.refresh_observations()
+
+    def to_dict(self, user, fields=None):
         observations = self.retrieve_observations()
         observation_names = set(i.name for i in observations)
         if not fields:
