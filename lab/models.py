@@ -17,6 +17,14 @@ class CastToProxyClassMetaclass(ModelBase):
         return obj.get_object()
 
 
+class LabTestManager(models.Manager):
+    def get_queryset(self):
+        if self.model == LabTest:
+            return super(LabTestManager, self).get_queryset()
+        else:
+            return super(LabTestManager, self).get_queryset().filter(lab_test_type=self.model.get_display_name())
+
+
 class Observation(
     omodels.UpdatesFromDictMixin, omodels.ToDictMixin, omodels.TrackedModel
 ):
@@ -229,6 +237,8 @@ class LabTest(omodels.PatientSubrecord):
         a class that adds utitility methods for
         accessing an objects lab tests
     """
+
+    objects = LabTestManager()
 
     STATUS_CHOICES = (
         ('pending', 'pending'),
