@@ -14,8 +14,8 @@ To declare tests, you can just declare a proxy class that inherits from LabTest 
 
 ``` python
   class Culture(LabTest):
-    organism = OrganismObservation()
-    sputum = PosNegObservation()
+    organism = Organism()
+    sputum = PosNeg()
 ```
 
 This serialises to editing.lab_tests
