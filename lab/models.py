@@ -5,6 +5,7 @@ from django.db import transaction
 from django.core.urlresolvers import reverse
 from django.db.models.base import ModelBase
 import opal.models as omodels
+from opal.utils import find_template
 from opal.utils import AbstractBase, _itersubclasses, camelcase_to_underscore
 from opal.utils import find_template
 import copy
@@ -15,6 +16,15 @@ class CastToProxyClassMetaclass(ModelBase):
         obj = super(CastToProxyClassMetaclass, cls).__call__(*args, **kwargs)
         return obj.get_object()
 
+
+class LabTestManager(models.Manager):
+    def get_queryset(self):
+        if self.model == LabTest:
+            return super(LabTestManager, self).get_queryset()
+        else:
+            return super(LabTestManager, self).get_queryset().filter(lab_test_type=self.model.get_display_name())
+
+
 class Observation(
     omodels.UpdatesFromDictMixin, omodels.ToDictMixin, omodels.TrackedModel
 ):
@@ -22,6 +32,7 @@ class Observation(
     _advanced_searchable = False
     _is_singleton = False
     __metaclass__ = CastToProxyClassMetaclass
+    lookup_list = None
 
     RESULT_CHOICES = ()
     consistency_token = models.CharField(max_length=8)
@@ -34,13 +45,12 @@ class Observation(
         max_length=256,
         choices=RESULT_CHOICES
     )
-    sensitive_antibiotics = models.ManyToManyField(
-        omodels.Antimicrobial, related_name="test_sensitive"
-    )
-    resistant_antibiotics = models.ManyToManyField(
-        omodels.Antimicrobial, related_name="test_resistant"
-    )
+
     name = models.CharField(max_length=255)
+
+    def __init__(self, *args, **kwargs):
+        self.verbose_name = kwargs.pop("verbose_name", None)
+        super(Observation, self).__init__(*args, **kwargs)
 
     def get_object(self):
         if self.observation_type:
@@ -55,9 +65,6 @@ class Observation(
 
     def get_result_look_up_list(self):
         return [i[1] for i in self.RESULT_CHOICES]
-
-    def to_dict(self, *args, **kwargs):
-        return dict(result=self.result)
 
     @classmethod
     def list(cls):
@@ -76,24 +83,34 @@ class Observation(
         return cls._meta.object_name
 
     def get_display_name(self):
-        return self.name.title()
+        field_name = self.verbose_name
 
-    @classmethod
-    def get_form_url(cls):
-        return reverse(
-            "lab_test_results_view", kwargs=dict(model=cls.get_api_name())
-        )
+        if field_name.islower():
+            field_name = field_name.title()
+
+        return field_name
+
+    def get_lookup_list_model_name(self):
+        if self.lookup_list:
+            return "{}_list".format(self.lookup_list.get_api_name())
 
     @classmethod
     def get_form_template(cls):
         return find_template([
-            "lab_tests/forms/observations/observation_base.html",
+            "lab/forms/observations/observation_base.html",
         ])
 
+    def set_attributes_from_name(self, name):
+        """
+            sets the name and the verbose name
 
-class GenericObservation(Observation):
-    class Meta:
-        proxy = True
+            pretty much exactly the same as the django method
+            of the same name, without some of the things we don't need.
+        """
+        if not self.name:
+            self.name = name
+        if self.verbose_name is None and self.name:
+            self.verbose_name = self.name.replace('_', ' ')
 
 
 class PosNeg(Observation):
@@ -116,22 +133,103 @@ class PosNegUnknown(Observation):
         ("unknown", "unknown"),
     )
 
+class PendingPosNeg(Observation):
+    class Meta:
+        proxy = True
+
+    RESULT_CHOICES = (
+        ("pending", "pending"),
+        ("positive", "+ve"),
+        ("negative", "-ve"),
+    )
+
+
+class PosNegEquivicalNotDone(Observation):
+    class Meta:
+        proxy = True
+
+    RESULT_CHOICES = (
+        ("pending", "pending"),
+        ("positive", "+ve"),
+        ("negative", "-ve"),
+        ("equivocal", "equivocal"),
+        ("not done", "not done"),
+    )
+
+class GenericInput(Observation):
+    class Meta:
+        proxy = True
+
+
+class Antimicrobial(Observation):
+    class Meta:
+        proxy = True
+
+    lookup_list = omodels.Antimicrobial
+
+class Organism(Observation):
+    class Meta:
+        proxy = True
+
+    lookup_list = omodels.Microbiology_organism
+
+class DynamicResultChoices(Observation):
+    """
+        this type of observation has its result choices populated in init
+    """
+    class Meta:
+        proxy = True
+
+    def __init__(self, *args, **kwargs):
+        self.result_choices = kwargs.pop("result_choices")
+        return super(DynamicResultChoices, self).__init__(*args, **kwargs)
+
+    def get_result_look_up_list(self):
+        return self.result_choices
+
+class DynamicLookupList(Observation):
+    """
+        this type of observation allows you to add the lookup list in init
+    """
+    class Meta:
+        proxy = True
+
+    def __init__(self, *args, **kwargs):
+        self.lookup_list = kwargs.pop("lookup_list")
+        return super(DynamicLookupList, self).__init__(*args, **kwargs)
+
+
+class DefaultLabTestMeta(object):
+    proxy = True
+
 
 class LabTestMetaclass(CastToProxyClassMetaclass):
     def __new__(cls, name, bases, attrs):
+        attrs_meta = attrs.get('Meta', None)
+
+        # TODO maybe a better way of doing this...
+        # We don't want to add the proxy message if its a the
+        # concrete model
+        if not name == 'LabTest':
+            if not attrs_meta:
+                attrs_meta = DefaultLabTestMeta
+            else:
+                attrs_meta.proxy = True
+
+            attrs["Meta"] = attrs_meta
+
         observation_fields = []
         for field_name, val in attrs.items():
             attr_class = getattr(val, "__class__", None)
             if attr_class and issubclass(attr_class, Observation):
                 attrs.pop(field_name)
-                field_copy = copy.deepcopy(attr_class)
-                field_copy.name = field_name
-                observation_fields.append(field_copy)
+                val.set_attributes_from_name(field_name)
+                attrs[field_name] = val
+                observation_fields.append(val)
 
         new_cls = super(LabTestMetaclass, cls).__new__(cls, name, bases, attrs)
         new_cls._observation_types = observation_fields
         return new_cls
-
 
 
 class LabTest(omodels.PatientSubrecord):
@@ -140,10 +238,18 @@ class LabTest(omodels.PatientSubrecord):
         accessing an objects lab tests
     """
 
+    objects = LabTestManager()
+
     STATUS_CHOICES = (
         ('pending', 'pending'),
         ('complete', 'complete'),
     )
+
+    # show the sensitive antimicrobial field
+    POTENTIALLY_SENSITIVE = False
+
+    # show the resistent antimicrobial field
+    POTENTIALLY_RESISTANT = False
 
     status = models.CharField(
         blank=True,
@@ -155,6 +261,13 @@ class LabTest(omodels.PatientSubrecord):
     date_ordered = models.DateField(blank=True, null=True)
     date_received = models.DateField(blank=True, null=True)
     details = JSONField(blank=True, null=True)
+
+    sensitive_antibiotics = models.ManyToManyField(
+        omodels.Antimicrobial, related_name="test_sensitive"
+    )
+    resistant_antibiotics = models.ManyToManyField(
+        omodels.Antimicrobial, related_name="test_resistant"
+    )
 
     __metaclass__ = LabTestMetaclass
 
@@ -214,7 +327,17 @@ class LabTest(omodels.PatientSubrecord):
 
     @classmethod
     def get_result_form(cls):
-        return "lab_tests/forms/{}_form.html".format(cls.get_api_name())
+        return find_template([
+            "lab_tests/forms/{}_form.html".format(cls.get_api_name()),
+            "lab/forms/form_base.html"
+        ])
+
+    @classmethod
+    def get_record(cls):
+        return find_template([
+            "lab_tests/records/{}.html".format(cls.get_api_name()),
+            "lab/records/record_base.html"
+        ])
 
     def get_object(self):
         """
@@ -232,11 +355,12 @@ class LabTest(omodels.PatientSubrecord):
             if lab_test_class:
                 self.__class__ = lab_test_class
 
-        self.get_observations()
+        self.refresh_observations()
         return self
 
-    def get_observations(self):
+    def retrieve_observations(self):
         existing = {}
+        result = []
 
         if self.id:
             observations = self.observations.all()
@@ -245,10 +369,17 @@ class LabTest(omodels.PatientSubrecord):
 
         for observation in self.__class__._observation_types:
             if observation.name in existing:
-                setattr(self, observation.name, existing[observation.name])
+                result.append(existing[observation.name])
             else:
-                setattr(self, observation.name, observation())
+                new_obs = copy.deepcopy(observation)
+                new_obs.lab_test = self
+                result.append(new_obs)
 
+        return result
+
+    def refresh_observations(self):
+        for observation in self.retrieve_observations():
+            setattr(self, observation.name, observation)
 
     # TODO these should be in a mixin somewhere
     @classmethod
@@ -258,6 +389,10 @@ class LabTest(omodels.PatientSubrecord):
     @classmethod
     def get_result_form_url(cls):
         return reverse("lab_form_view", kwargs=dict(model=cls.get_api_name()))
+
+    @classmethod
+    def get_record_url(cls):
+        return reverse("lab_record_view", kwargs=dict(model=cls.get_api_name()))
 
     @classmethod
     def get_class_from_display_name(cls, lab_test_type):
@@ -296,21 +431,25 @@ class LabTest(omodels.PatientSubrecord):
         self.observations.exclude(id__in=existing_observations).delete()
 
         for observation in observation_data:
-            if "id" in observation:
-                to_save = observation.get(id=observation["id"])
+            if observation.get("id", None):
+                to_save = self.observations.get(id=observation["id"])
             else:
                 to_save = getattr(self, observation["name"])
                 to_save.lab_test_id = self.id
 
             to_save.update_from_dict(observation, user, **kwargs)
 
+        # TODO observations should refresh when changed
+        self.refresh_observations()
+
     def to_dict(self, user, fields=None):
-        observation_names = set(self.__class__.all_observation_names())
+        observations = self.retrieve_observations()
+        observation_names = set(i.name for i in observations)
         if not fields:
             fields = self._get_fieldnames_to_serialize()
-        fields = [field for field in fields if field not in observation_names]
+
+        fields = [field for field in fields if field not in observation_names and hasattr(self, field)]
         response = super(LabTest, self).to_dict(user, fields=fields)
-        for observation_name in observation_names:
-            observation = getattr(self, observation_name)
-            response[observation_name] = observation.to_dict(user)
+        for observation in observations:
+            response[observation.name] = observation.to_dict(user)
         return response

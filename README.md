@@ -64,19 +64,41 @@ use generated forms easily.
 The LabTest uses the `test_name` field as the api name for whatever you've inherited from
 it. This is then cast into that class.
 
-e.g. if you have a class Smear
+e.g. if you have a class CustomTest
 
 ```python
-# settings.py
+# models.py
 from lab.models import LabTest
 
 class CustomTest(LabTest):
-  class Meta:
-    proxy = True
+  pass
 ```
 
 If you save a lab_test with test_name "custom_test" for all it will use your custom
 logic when being deserialised.
+
+we can now add observations to CustomTest
+
+```python
+# models.py
+from lab.models import LabTest, PendingPosNeg
+
+class CustomTest(LabTest):
+  issue = PendingPosNeg()
+```
+
+this adds an observation with the name 'issue' from one of the observation fields that lab
+test ships with. This adds the choices 'pending', 'positive', 'negative' to the form
+
+Its equivalent to
+
+```python
+# models.py
+from lab.models import LabTest, PendingPosNeg
+
+class CustomTest(LabTest):
+  issue = DynamicResultChoices('pending', '+ve', '-ve')
+```
 
 Further to this as noted, if we want to add a custom results set as RESULT_CHOICES
 on your model
@@ -84,17 +106,11 @@ e.g.
 
 
 ```python
-# settings.py
-from lab.models import LabTest
+# models.py
+from lab.models import LabTest, PendingPosNeg
 
 class CustomTest(LabTest):
-  class Meta:
-    proxy = True
-
-  RESULT_CHOICES = (
-    ('orange', '20mg'),
-    ('yellow', '30mg'),
-  )
+  issue = PendingPosNeg()
 ```
 
 Note in the database we store 20mgs, not orange
@@ -131,17 +147,11 @@ Now add some lab tests to your models, e.g.
 
 run migrations. Now add a LabTest record panel to your detail page. You'll see by default when you add a lab test you get
 an input field which autocompletes to one of the above tests. Note you still need to add templates for the form templates.
-You do this by adding templates to /templates/lab_tests/forms/{{ test api name }}_form.html.
-
-e.g. create a file called /templates/lab_tests/forms/smear_form.html with
-
-```html
-  {% load lab %}
-  {% render_observation observations.pathology %}
-```
 
 Now in the record panel you should be able to click add, type in Smear and you should get a rendered form with the options for
 pathology of positive/negative/not known.
+
+You can override the form template by putting a form at /templates/lab_tests/forms/{{ model api name }}_form.html
 
 ### Other fields on LabTest
 

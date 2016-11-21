@@ -8,19 +8,7 @@ class LabTestContextProcessor(object):
             setattr(self, i.__name__, i)
 
 
-class ObservationContextProcessor(object):
-    def __init__(self):
-        for i in LabTest.all_observations():
-            setattr(self, i.name, i)
-
-
 def lab_tests(request):
     return {
         "lab_tests": SimpleLazyObject(LabTestContextProcessor)
-    }
-
-
-def observations(request):
-    return {
-        "observations": SimpleLazyObject(ObservationContextProcessor)
     }
