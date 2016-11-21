@@ -12,7 +12,8 @@ before_script:
 script:
   - opal test py --coverage
 after_success:
- - coveralls-lcov -v -n coverage/Firefox\ 31.0.0\ \(Linux\ 0.0.0\)/lcov.info > coverage/coverage.json
- - coveralls --merge=coverage/coverage.json
+ # - coveralls-lcov -v -n coverage/Firefox\ 31.0.0\ \(Linux\ 0.0.0\)/lcov.info > coverage/coverage.json
+ - coveralls
+ # - coveralls --merge=coverage/coverage.json
 notifications:
   slack: ohcuk:6spaME3CB7f2PGrMAcklYWqp
