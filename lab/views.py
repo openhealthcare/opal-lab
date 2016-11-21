@@ -9,17 +9,9 @@ from lab.models import LabTest
 from opal.core.views import LoginRequiredMixin
 
 
-class LabTestResultTemplateView(LoginRequiredMixin, TemplateView):
-    """
-    This view renders the form template for our field.
-
-    These are generated for subrecords, but can also be used
-    by plugins for other mdoels.
-    """
-    template_name = "lab/forms/form_base.html"
-
+class AbstractLabTestView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, *args, **kwargs):
-        ctx = super(LabTestResultTemplateView, self).get_context_data(*args, **kwargs)
+        ctx = super(AbstractLabTestView, self).get_context_data(*args, **kwargs)
         ctx["lab_test"] = self.lab_test
         return ctx
 
@@ -29,4 +21,20 @@ class LabTestResultTemplateView(LoginRequiredMixin, TemplateView):
         it can be accessed by all subsequent methods
         """
         self.lab_test = LabTest.get_class_from_api_name(kw['model'])
-        return super(LabTestResultTemplateView, self).dispatch(*a, **kw)
+        return super(AbstractLabTestView, self).dispatch(*a, **kw)
+
+
+class LabTestResultTemplateView(AbstractLabTestView):
+    """
+    This view renders the form template for our lab test.
+    """
+    def get_template_names(self):
+        return self.lab_test.get_result_form()
+
+
+class LabTestRecordTemplateView(AbstractLabTestView):
+    """
+    This view renders the record template for our lab test.
+    """
+    def get_template_names(self):
+        return self.lab_test.get_record()

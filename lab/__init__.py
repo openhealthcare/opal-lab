@@ -10,17 +10,6 @@ class LabPlugin(plugins.OpalPlugin):
     Main entrypoint to expose this plugin to our OPAL application.
     """
     urls = urlpatterns
-    javascripts = {
-        # Add your javascripts here!
-        'opal.controllers': [
-            'js/lab/controllers/forms/lab_test_record_form.js',
-            'js/lab/directives.js',
-        ],
-        'opal.services': [
-            'js/lab/services/records/lab_test_record.js',
-            'js/lab/services/lab_test_form_helper.js',
-        ]
-    }
 
     def restricted_teams(self, user):
         """

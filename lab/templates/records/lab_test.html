@@ -1,6 +1,1 @@
-<strong>[[ item.lab_test_type ]]</strong>
-<div ng-repeat="(name, observation) in item">
-  <div ng-show="observation.observation_type">
-    [[ observation.name ]]: [[ observation.result ]]
-  </div>
-</div>
+<div ng-include src="metadata.lab_tests[item.lab_test_type].record_url"></div>
