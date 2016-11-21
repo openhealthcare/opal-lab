@@ -165,3 +165,7 @@ A details json field on the element, allows the capture of miscellanious metadat
 ### Metadata
 
 This brings in the field result template for each test.
+
+### Synonyms
+
+If a class has synonyms, for example a Chest Xray is sometimes known as CX, these should be declared in _synonyms as part of the class. These will be displayed in the lab test input and will return the same form as the actual model.

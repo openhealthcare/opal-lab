@@ -22,7 +22,14 @@ class LabTestManager(models.Manager):
         if self.model == LabTest:
             return super(LabTestManager, self).get_queryset()
         else:
-            return super(LabTestManager, self).get_queryset().filter(lab_test_type=self.model.get_display_name())
+            return super(LabTestManager, self).get_queryset().filter(
+                lab_test_type=self.model.get_display_name()
+            )
+
+    def create(self, **kwargs):
+        if not self.model == LabTest:
+            kwargs.update(dict(lab_test_type=self.model.get_display_name()))
+        return super(LabTestManager, self).create(**kwargs)
 
 
 class Observation(
@@ -239,6 +246,7 @@ class LabTest(omodels.PatientSubrecord):
     """
 
     objects = LabTestManager()
+    _synonyms = []
 
     STATUS_CHOICES = (
         ('pending', 'pending'),
@@ -331,6 +339,13 @@ class LabTest(omodels.PatientSubrecord):
             "lab_tests/forms/{}_form.html".format(cls.get_api_name()),
             "lab/forms/form_base.html"
         ])
+
+    @classmethod
+    def get_synonyms(cls):
+        display_name = cls.get_display_name()
+        synonyms = {i: display_name for i in cls._synonyms}
+        synonyms[cls.get_display_name()] = cls.get_display_name()
+        return synonyms
 
     @classmethod
     def get_record(cls):

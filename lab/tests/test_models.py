@@ -1,6 +1,8 @@
 from opal.core.test import OpalTestCase
 from lab.models import LabTest
-from lab.tests.models import Smear, SampleTest
+from lab.tests.models import (
+    Smear, SampleTest, SomeInherittedTest, SomeTestWithSynonyms
+)
 
 
 class TestLabTestSave(OpalTestCase):
@@ -50,13 +52,11 @@ class TestVerboseName(OpalTestCase):
 class TestLabTestManagers(OpalTestCase):
     def setUp(self):
         self.patient, _ = self.new_patient_and_episode_please()
-        self.smear_test = LabTest.objects.create(
+        self.smear_test = Smear.objects.create(
             patient=self.patient,
-            lab_test_type="Smear"
         )
-        self.sample_test = LabTest.objects.create(
+        self.sample_test = SampleTest.objects.create(
             patient=self.patient,
-            lab_test_type=SampleTest.get_display_name()
         )
 
     def test_manager_for_a_lab_test(self):
@@ -69,3 +69,26 @@ class TestLabTestManagers(OpalTestCase):
         lab_tests = Smear.objects.all()
         self.assertEqual(lab_tests.count(), 1)
         self.assertEqual(lab_tests.get(id=self.smear_test.id), self.smear_test)
+
+
+class TestSynonymns(OpalTestCase):
+    def test_get_synonyms(self):
+        result = SomeTestWithSynonyms.get_synonyms()
+        self.assertEqual(len(result.keys()), 2)
+        self.assertEqual(
+            result["Some Test With Synonyms"],
+            "Some Test With Synonyms"
+        )
+        self.assertEqual(
+            result["Also known as"],
+            "Some Test With Synonyms"
+        )
+
+
+
+# class TestInheritance(OpaltestCase):
+#     def setUp(self):
+#         self.patient, _ = self.new_patient_and_episode_please()
+#         self.some_inherited_test = SomeInherittedTest.objects.create(
+#             patient=self.patient
+#         )
