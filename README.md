@@ -3,7 +3,7 @@ This is lab - an [OPAL](https://github.com/openhealthcare/opal) plugin.
 
 [![Build
 Status](https://travis-ci.org/openhealthcare/elcid.png)](https://travis-ci.org/openhealthcare/opal-lab)
-[![Coverage Status](https://coveralls.io/repos/github/openhealthcare/elcid/badge.svg?branch=master)](https://coveralls.io/github/openhealthcare/opal-lab?branch=default)
+[![Coverage Status](https://coveralls.io/repos/github/openhealthcare/elcid/badge.svg?branch=default)](https://coveralls.io/github/openhealthcare/opal-lab?branch=default)
 
 
 ### Summary
