@@ -9,7 +9,7 @@ module.exports = function(config){
     opalPath = '../../opal';
   }
   var karmaDefaults = require(opalPath + '/config/karma_defaults.js');
-  var karmaDir = __dirname;
+  var baseDir = '../' + __dirname;
   var coverageFiles = [
     __dirname + "/../" + projectName + "/static/js/" + projectName + "/**/*.js"
   ];
@@ -18,6 +18,6 @@ module.exports = function(config){
     __dirname + "/../" + projectName + "/static/js/" + projectName + "test/**/*.js",
   ];
 
-  var defaultConfig = karmaDefaults(karmaDir, coverageFiles, includedFiles);
+  var defaultConfig = karmaDefaults(includedFiles, baseDir, coverageFiles);
   config.set(defaultConfig);
 };
