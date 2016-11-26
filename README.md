@@ -2,8 +2,8 @@ This is lab - an [OPAL](https://github.com/openhealthcare/opal) plugin.
 
 
 [![Build
-Status](https://travis-ci.org/openhealthcare/elcid.png)](https://travis-ci.org/openhealthcare/opal-lab)
-[![Coverage Status](https://coveralls.io/repos/github/openhealthcare/elcid/badge.svg?branch=master)](https://coveralls.io/github/openhealthcare/opal-lab?branch=default)
+Status](https://travis-ci.org/openhealthcare/opal-lab.png)](https://travis-ci.org/openhealthcare/opal-lab)
+[![Coverage Status](https://coveralls.io/repos/github/openhealthcare/opal-lab/badge.svg?branch=master)](https://coveralls.io/github/openhealthcare/opal-lab?branch=master)
 
 
 ### Summary
@@ -14,8 +14,8 @@ To declare tests, you can just declare a proxy class that inherits from LabTest 
 
 ``` python
   class Culture(LabTest):
-    organism = OrganismObservation()
-    sputum = PosNegObservation()
+    organism = Organism()
+    sputum = PosNeg()
 ```
 
 This serialises to editing.lab_tests
