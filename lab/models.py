@@ -303,6 +303,11 @@ class LabTest(omodels.PatientSubrecord):
             for i in c.observation_fields():
                 yield i
 
+    def get_lab_test_type_from_synonym(self, lab_test_type):
+        for c in LabTest.list():
+            if lab_test_type in c.get_synonyms():
+                return c.get_display_name()
+
     @classmethod
     def all_observation_names(cls):
         for i in cls.all_observations():
@@ -429,7 +434,9 @@ class LabTest(omodels.PatientSubrecord):
         observation_data = []
 
         # cast us to the correct type
-        self.lab_test_type = data["lab_test_type"]
+        self.lab_test_type = self.get_lab_test_type_from_synonym(
+            data.pop("lab_test_type")
+        )
         self.get_object()
 
         for observation in self.__class__.observation_fields():

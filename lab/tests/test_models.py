@@ -26,6 +26,20 @@ class TestLabTestSave(OpalTestCase):
             "-ve"
         )
 
+    def test_update_with_synonym(self):
+        data_dict = dict(
+            lab_test_type="Also known as",
+            some_observation=dict(result="-ve")
+        )
+        self.assertFalse(LabTest.objects.exists())
+        lab_test = LabTest(patient=self.patient)
+        lab_test.update_from_dict(data_dict, self.user)
+        found_lab_test = SomeTestWithSynonyms.objects.get()
+        self.assertEqual(
+            found_lab_test.some_observation.result,
+            "-ve"
+        )
+
     def test_to_dict(self):
         lab_test = LabTest.objects.create(
             patient=self.patient,
@@ -84,11 +98,9 @@ class TestSynonymns(OpalTestCase):
             "Some Test With Synonyms"
         )
 
-
-
-# class TestInheritance(OpaltestCase):
-#     def setUp(self):
-#         self.patient, _ = self.new_patient_and_episode_please()
-#         self.some_inherited_test = SomeInherittedTest.objects.create(
-#             patient=self.patient
-#         )
+    def test_get_synonym_from_lab_test(self):
+        lab_test = LabTest()
+        lab_test_type = lab_test.get_lab_test_type_from_synonym(
+            "Also known as"
+        )
+        self.assertEqual(lab_test_type, "Some Test With Synonyms")
