@@ -15,4 +15,4 @@ class SomeAbstractTest(models.LabTest, AbstractBase):
 
 
 class SomeInherittedTest(SomeAbstractTest):
-    pass
+    _title = "Some Abstract Base"
