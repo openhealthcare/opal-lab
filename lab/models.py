@@ -37,7 +37,7 @@ class Observation(
     RESULT_CHOICES = ()
     consistency_token = models.CharField(max_length=8)
     observation_type = models.CharField(max_length=256)
-    details = JSONField(blank=True, null=True)
+    extras = JSONField(blank=True, null=True)
     lab_test = models.ForeignKey('LabTest', related_name='observations')
     result = models.CharField(
         blank=True,
@@ -200,7 +200,11 @@ class DynamicLookupList(Observation):
 
 
 class DefaultLabTestMeta(object):
+    """ auto created used on the basis of
+        http://stackoverflow.com/questions/30267237/invalidbaseserror-cannot-resolve-bases-for-modelstate-users-groupproxy
+    """
     proxy = True
+    auto_created = True
 
 
 class LabTestMetaclass(CastToProxyClassMetaclass):
@@ -215,6 +219,7 @@ class LabTestMetaclass(CastToProxyClassMetaclass):
                 attrs_meta = DefaultLabTestMeta
             else:
                 attrs_meta.proxy = True
+                attrs_meta.auto_created = True
 
             attrs["Meta"] = attrs_meta
 
@@ -238,6 +243,7 @@ class LabTest(omodels.PatientSubrecord):
         accessing an objects lab tests
     """
 
+
     objects = LabTestManager()
 
     STATUS_CHOICES = (
@@ -260,7 +266,7 @@ class LabTest(omodels.PatientSubrecord):
     lab_test_type = models.CharField(max_length=256, blank=True, null=True)
     date_ordered = models.DateField(blank=True, null=True)
     date_received = models.DateField(blank=True, null=True)
-    details = JSONField(blank=True, null=True)
+    extras = JSONField(blank=True, null=True)
 
     sensitive_antibiotics = models.ManyToManyField(
         omodels.Antimicrobial, related_name="test_sensitive"

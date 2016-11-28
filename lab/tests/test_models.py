@@ -1,6 +1,9 @@
 from opal.core.test import OpalTestCase
 from lab.models import LabTest
-from lab.tests.models import Smear, SampleTest
+from lab.tests.models import (
+    Smear, SampleTest, SomeDetailedTest,
+    SomeTestWithDetailedOboservations
+)
 
 
 class TestLabTestSave(OpalTestCase):
@@ -69,3 +72,22 @@ class TestLabTestManagers(OpalTestCase):
         lab_tests = Smear.objects.all()
         self.assertEqual(lab_tests.count(), 1)
         self.assertEqual(lab_tests.get(id=self.smear_test.id), self.smear_test)
+
+
+class TestDetailsInTests(OpalTestCase):
+    def setUp(self):
+        self.patient, _ = self.new_patient_and_episode_please()
+
+    def test_lab_test_with_details(self):
+        some_detailed_test = SomeDetailedTest(patient=self.patient)
+        some_detailed_test.update_from_dict(dict(
+            lab_test_type="SomeDetailedTest",
+            some_name=dict(result="+ve"),
+            extras=dict(
+                interesting=2,
+                some_field="some name"
+            )
+        ), None)
+        found_test = SomeDetailedTest.objects.get()
+        self.assertEqual(found_test.extras["interesting"], 2)
+        self.assertEqual(found_test.extras["some_field"], "some name")
