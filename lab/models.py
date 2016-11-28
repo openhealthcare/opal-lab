@@ -8,6 +8,7 @@ import opal.models as omodels
 from opal.utils import find_template
 from opal.utils import AbstractBase, _itersubclasses, camelcase_to_underscore
 from opal.utils import find_template
+from opal.core.exceptions import APIError
 import copy
 
 
@@ -24,15 +25,42 @@ class LabTestManager(models.Manager):
         else:
             return super(LabTestManager, self).get_queryset().filter(lab_test_type=self.model.get_display_name())
 
+class ExtrasMixin(object):
+    _extras = []
+
+    def get_extra_fields(self):
+        return self._extras
+
+    def set_extras(self, extras, *args, **kwargs):
+        if not extras:
+            extras = {}
+        unknown_fields = set(extras.keys()) - set(self.get_extra_fields())
+        if unknown_fields:
+            raise APIError("unknown extras {0} found for {1}".format(
+                unknown_fields, self.__class__
+            ))
+        self.extras = extras
+
+    def get_extras(self, *args, **kwargs):
+        extras = self.get_extra_fields()
+        existing_extras = self.extras or {}
+
+        for extra in extras:
+            if extra not in existing_extras:
+                existing_extras[extra] = None
+
+        return existing_extras
+
 
 class Observation(
-    omodels.UpdatesFromDictMixin, omodels.ToDictMixin, omodels.TrackedModel
+    ExtrasMixin, omodels.UpdatesFromDictMixin, omodels.ToDictMixin, omodels.TrackedModel
 ):
     # we really shouldn't have to declare this
     _advanced_searchable = False
     _is_singleton = False
     __metaclass__ = CastToProxyClassMetaclass
     lookup_list = None
+    _extras = []
 
     RESULT_CHOICES = ()
     consistency_token = models.CharField(max_length=8)
@@ -111,6 +139,7 @@ class Observation(
             self.name = name
         if self.verbose_name is None and self.name:
             self.verbose_name = self.name.replace('_', ' ')
+
 
 
 class PosNeg(Observation):
@@ -242,13 +271,13 @@ class LabTestMetaclass(CastToProxyClassMetaclass):
         return new_cls
 
 
-class LabTest(omodels.PatientSubrecord):
+class LabTest(ExtrasMixin, omodels.PatientSubrecord):
     """
         a class that adds utitility methods for
         accessing an objects lab tests
     """
 
-
+    _extras = []
     objects = LabTestManager()
 
     STATUS_CHOICES = (
@@ -339,7 +368,7 @@ class LabTest(omodels.PatientSubrecord):
     @classmethod
     def get_result_form(cls):
         return find_template([
-            "lab_tests/forms/{}_form.html".format(cls.get_api_name()),
+            "lab/forms/{}_form.html".format(cls.get_api_name()),
             "lab/forms/form_base.html"
         ])
 
@@ -417,6 +446,7 @@ class LabTest(omodels.PatientSubrecord):
             if test_class.get_api_name() == lab_test_type:
                 return test_class
 
+
     @transaction.atomic()
     def update_from_dict(self, data, user, **kwargs):
         """ lab tests are foreign keys so have to be saved
@@ -454,13 +484,13 @@ class LabTest(omodels.PatientSubrecord):
         self.refresh_observations()
 
     def to_dict(self, user, fields=None):
-        observations = self.retrieve_observations()
-        observation_names = set(i.name for i in observations)
+        observation_names = set(i.name for i in self._observation_types)
         if not fields:
             fields = self._get_fieldnames_to_serialize()
 
         fields = [field for field in fields if field not in observation_names and hasattr(self, field)]
         response = super(LabTest, self).to_dict(user, fields=fields)
-        for observation in observations:
-            response[observation.name] = observation.to_dict(user)
+        for observation_name in observation_names:
+            response[observation_name] = getattr(self, observation_name).to_dict(user)
+
         return response

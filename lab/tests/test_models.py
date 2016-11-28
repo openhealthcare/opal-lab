@@ -1,7 +1,10 @@
+import mock
 from opal.core.test import OpalTestCase
-from lab.LabTest import models
+from opal.core import exceptions
+from lab import models
 from lab.tests.models import (
-    Smear, SampleTest, SomeInherittedTest, SomeDetailedTest
+    Smear, SampleTest, SomeInherittedTest, SomeDetailedTest,
+    SomeTestWithDetailedObservations
 )
 
 
@@ -82,20 +85,109 @@ class TestLabTestManagers(OpalTestCase):
         self.assertEqual(lab_tests.get(id=self.smear_test.id), self.smear_test)
 
 
-class TestDetailsInTests(OpalTestCase):
+class TestExtrasInObservations(OpalTestCase):
     def setUp(self):
         self.patient, _ = self.new_patient_and_episode_please()
 
-    def test_lab_test_with_details(self):
+    def test_update_from_dict(self):
+        test = SomeTestWithDetailedObservations.objects.create(
+            patient=self.patient
+        )
+        data = dict(
+            interesting=dict(
+                result="+ve",
+                extras=dict(something="some field"),
+            ),
+            lab_test_type="SomeTestWithDetailedObservations"
+        )
+
+        test.update_from_dict(data, None)
+        loaded = models.LabTest.objects.get()
+        self.assertEqual(loaded.interesting.extras["something"], "some field")
+
+    def test_update_with_unknown_extras(self):
+        test = SomeTestWithDetailedObservations.objects.create(
+            patient=self.patient
+        )
+        data = dict(
+            interesting=dict(
+                result="+ve",
+                extras=dict(not_found="some field"),
+            ),
+            lab_test_type="SomeTestWithDetailedObservations"
+        )
+        with self.assertRaises(exceptions.APIError) as ap:
+            test.update_from_dict(data, None)
+
+        err = "unknown extras set(['not_found']) found for <class 'lab.tests.models.SomeDetailedObservation'>"
+        self.assertEqual(
+            str(ap.exception), err
+        )
+
+    def test_to_dict(self):
+        test = SomeTestWithDetailedObservations.objects.create(
+            patient=self.patient
+        )
+        test.interesting.extras = dict(something="some field")
+        test.save()
+        as_dict = test.to_dict(None)
+        self.assertEqual(
+            as_dict["interesting"]["extras"]["something"],
+            "some field"
+        )
+
+
+class TestExtrasInTests(OpalTestCase):
+    def setUp(self):
+        self.patient, _ = self.new_patient_and_episode_please()
+
+    def test_lab_test_with_extras(self):
         some_detailed_test = SomeDetailedTest(patient=self.patient)
         some_detailed_test.update_from_dict(dict(
             lab_test_type="SomeDetailedTest",
             some_name=dict(result="+ve"),
             extras=dict(
                 interesting=2,
-                some_field="some name"
             )
         ), None)
         found_test = SomeDetailedTest.objects.get()
         self.assertEqual(found_test.extras["interesting"], 2)
-        self.assertEqual(found_test.extras["some_field"], "some name")
+
+    def test_lab_test_with_unknown_extras(self):
+        some_detailed_test = SomeDetailedTest(patient=self.patient)
+
+        with self.assertRaises(exceptions.APIError) as ap:
+            some_detailed_test.update_from_dict(dict(
+                lab_test_type="SomeDetailedTest",
+                some_name=dict(result="+ve"),
+                extras=dict(
+                    interesting=2,
+                    not_found="some name"
+                )
+            ), None)
+        err = "unknown extras set(['not_found']) found for <class 'lab.tests.models.SomeDetailedTest'>"
+        self.assertEqual(
+            str(ap.exception), err
+        )
+
+    def test_lab_test_to_dict(self):
+        some_detailed_test = SomeDetailedTest(patient=self.patient)
+        some_detailed_test.extras = dict(interesting=2)
+        some_detailed_test.save()
+        as_dict = some_detailed_test.to_dict(None)
+        self.assertEqual(as_dict["extras"]["interesting"], 2)
+
+    def test_to_dict_if_none(self):
+        some_detailed_test = SomeDetailedTest.objects.create(patient=self.patient)
+        as_dict = some_detailed_test.to_dict(None)
+        self.assertEqual(as_dict["extras"]["interesting"], None)
+
+
+class TestGetFormTemplate(OpalTestCase):
+    @mock.patch("lab.models.find_template")
+    def test_get_result_form(self, find_template):
+        Smear.get_result_form()
+        self.assertEqual(
+            find_template.call_args[0][0],
+            ['lab/forms/smear_form.html', 'lab/forms/form_base.html']
+        )

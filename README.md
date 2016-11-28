@@ -160,7 +160,35 @@ antibiotics so we have a many to many field for these.
 
 we have date ordered/date received and status fields which are self explanatory.
 
-A details json field on the element, allows the capture of miscellanious metadata
+An extras json field on the element, allows the capture of miscellanious metadata. To use this you must define _extras on a model with the fields you wish to include.
+
+for example
+
+```python
+class SomeDetailedTest(models.LabTest):
+    _extras = ('interesting', 'dont you think')
+    some_name = models.PosNeg()
+```
+
+You can also do this on an observation for example
+
+```python
+class SomeDetailedObservation(models.Observation):
+    _extras = ('something', 'something else')
+    RESULT_CHOICES = (
+        ("positive", "+ve"),
+        ("negative", "-ve")
+    )
+
+    class Meta:
+        proxy = True
+```
+
+note, if you try to save a field that is not in extras, an exception will be thrown.
+
+Also as these fields are not typed, if you want to use dates/datetimes, you must manage the conversion manually yourself.
+
+
 
 ### Metadata
 

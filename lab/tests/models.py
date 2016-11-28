@@ -19,17 +19,20 @@ class SomeInherittedTest(SomeAbstractTest):
 
 
 class SomeDetailedTest(models.LabTest):
-    details = ('interesting', 'dont you think')
+    _extras = ('interesting', 'dont you think')
     some_name = models.PosNeg()
 
 
-class SomeDetailesObservation(models.Observation):
-    details = ('something', 'something else')
+class SomeDetailedObservation(models.Observation):
+    _extras = ('something', 'something else')
+    RESULT_CHOICES = (
+        ("positive", "+ve"),
+        ("negative", "-ve")
+    )
 
     class Meta:
         proxy = True
 
 
-class SomeTestWithDetailedOboservations(models.LabTest):
-    interesting = SomeDetailesObservation()
-    _title = "Some Abstract Base"
+class SomeTestWithDetailedObservations(models.LabTest):
+    interesting = SomeDetailedObservation()
