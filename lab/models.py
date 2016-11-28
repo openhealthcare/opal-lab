@@ -211,6 +211,12 @@ class LabTestMetaclass(CastToProxyClassMetaclass):
     def __new__(cls, name, bases, attrs):
         attrs_meta = attrs.get('Meta', None)
 
+        observation_fields = []
+
+        for base in bases:
+            if hasattr(base, "_observation_types"):
+                observation_fields.extend(base._observation_types)
+
         # TODO maybe a better way of doing this...
         # We don't want to add the proxy message if its a the
         # concrete model
@@ -223,7 +229,6 @@ class LabTestMetaclass(CastToProxyClassMetaclass):
 
             attrs["Meta"] = attrs_meta
 
-        observation_fields = []
         for field_name, val in attrs.items():
             attr_class = getattr(val, "__class__", None)
             if attr_class and issubclass(attr_class, Observation):

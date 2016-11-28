@@ -32,3 +32,4 @@ class SomeDetailesObservation(models.Observation):
 
 class SomeTestWithDetailedOboservations(models.LabTest):
     interesting = SomeDetailesObservation()
+    _title = "Some Abstract Base"
