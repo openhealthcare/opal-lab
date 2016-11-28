@@ -1,12 +1,12 @@
 {% load lab %}
 {% load forms %}
-{% datepicker field="models.LabTest.date_ordered" %}
+{% datepicker field="LabTest.date_ordered" %}
 {% for observation in lab_test.retrieve_observations %}
   {% render_observation observation %}
 {% endfor %}
 {% if lab_test.POTENTIALLY_SENSITIVE %}
-  {% select field="models.LabTest.sensitive_antibiotics" multiple=True tagging=False search_select=True %}
+  {% select field="LabTest.sensitive_antibiotics" multiple=True tagging=False search_select=True %}
 {% endif %}
 {% if lab_test.POTENTIALLY_RESISTANT %}
-  {% select field="models.LabTest.resistant_antibiotics" multiple=True tagging=False search_select=True %}
+  {% select field="LabTest.resistant_antibiotics" multiple=True tagging=False search_select=True %}
 {% endif %}
