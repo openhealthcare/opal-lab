@@ -76,8 +76,7 @@ class Observation(
     @classmethod
     def list(cls):
         for test_class in _itersubclasses(cls):
-            if not isinstance(cls, AbstractBase):
-                yield test_class
+            yield test_class
 
     @classmethod
     def get_class_from_observation_type(cls, observation_type):
@@ -214,6 +213,12 @@ class LabTestMetaclass(CastToProxyClassMetaclass):
     def __new__(cls, name, bases, attrs):
         attrs_meta = attrs.get('Meta', None)
 
+        observation_fields = []
+
+        for base in bases:
+            if hasattr(base, "_observation_types"):
+                observation_fields.extend(base._observation_types)
+
         # TODO maybe a better way of doing this...
         # We don't want to add the proxy message if its a the
         # concrete model
@@ -225,7 +230,6 @@ class LabTestMetaclass(CastToProxyClassMetaclass):
 
             attrs["Meta"] = attrs_meta
 
-        observation_fields = []
         for field_name, val in attrs.items():
             attr_class = getattr(val, "__class__", None)
             if attr_class and issubclass(attr_class, Observation):
@@ -349,7 +353,7 @@ class LabTest(omodels.PatientSubrecord):
     def get_synonyms(cls):
         display_name = cls.get_display_name()
         synonyms = {i: display_name for i in cls._synonyms}
-        synonyms[cls.get_display_name()] = cls.get_display_name()
+        synonyms[display_name] = display_name
         return synonyms
 
     @classmethod

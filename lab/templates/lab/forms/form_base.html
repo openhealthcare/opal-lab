@@ -1,7 +1,5 @@
 {% load lab %}
 {% load forms %}
-
-<input ng-init="{{ lab_test.get_display_name }}" ng-model="editing.lab_test.lab_test_type" type="hidden">
 {% datepicker field="LabTest.date_ordered" %}
 {% for observation in lab_test.retrieve_observations %}
   {% render_observation observation %}
