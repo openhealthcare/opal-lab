@@ -80,6 +80,9 @@ class Observation(
         self.verbose_name = kwargs.pop("verbose_name", None)
         super(Observation, self).__init__(*args, **kwargs)
 
+    def get_api_name(self):
+        return camelcase_to_underscore(self.name)
+
     def get_object(self):
         if self.observation_type:
             observation_class = self.__class__.get_class_from_observation_type(

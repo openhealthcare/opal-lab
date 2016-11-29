@@ -18,12 +18,12 @@ class SomeInherittedTest(SomeAbstractTest):
     pass
 
 
-class SomeDetailedTest(models.LabTest):
+class SomeTestWithExtras(models.LabTest):
     _extras = ('interesting', 'dont you think')
     some_name = models.PosNeg()
 
 
-class SomeDetailedObservation(models.Observation):
+class SomeObservationWithExtras(models.Observation):
     _extras = ('something', 'something else')
     RESULT_CHOICES = (
         ("positive", "+ve"),
@@ -34,5 +34,11 @@ class SomeDetailedObservation(models.Observation):
         proxy = True
 
 
-class SomeTestWithDetailedObservations(models.LabTest):
-    interesting = SomeDetailedObservation()
+class SomeTestWithObservationsWithExtras(models.LabTest):
+    interesting = SomeObservationWithExtras()
+
+class SomeAntimicrobialTest(models.LabTest):
+    antimicrobial = models.Antimicrobial()
+
+class SomeGenericTest(models.LabTest):
+    generic = models.GenericInput()

@@ -3,8 +3,8 @@ from opal.core.test import OpalTestCase
 from opal.core import exceptions
 from lab import models
 from lab.tests.models import (
-    Smear, SampleTest, SomeInherittedTest, SomeDetailedTest,
-    SomeTestWithDetailedObservations
+    Smear, SampleTest, SomeInherittedTest, SomeTestWithExtras,
+    SomeTestWithObservationsWithExtras
 )
 
 
@@ -90,7 +90,7 @@ class TestExtrasInObservations(OpalTestCase):
         self.patient, _ = self.new_patient_and_episode_please()
 
     def test_update_from_dict(self):
-        test = SomeTestWithDetailedObservations.objects.create(
+        test = SomeTestWithObservationsWithExtras.objects.create(
             patient=self.patient
         )
         data = dict(
@@ -98,7 +98,7 @@ class TestExtrasInObservations(OpalTestCase):
                 result="+ve",
                 extras=dict(something="some field"),
             ),
-            lab_test_type="SomeTestWithDetailedObservations"
+            lab_test_type="SomeTestWithObservationsWithExtras"
         )
 
         test.update_from_dict(data, None)
@@ -106,7 +106,7 @@ class TestExtrasInObservations(OpalTestCase):
         self.assertEqual(loaded.interesting.extras["something"], "some field")
 
     def test_update_with_unknown_extras(self):
-        test = SomeTestWithDetailedObservations.objects.create(
+        test = SomeTestWithObservationsWithExtras.objects.create(
             patient=self.patient
         )
         data = dict(
@@ -114,18 +114,18 @@ class TestExtrasInObservations(OpalTestCase):
                 result="+ve",
                 extras=dict(not_found="some field"),
             ),
-            lab_test_type="SomeTestWithDetailedObservations"
+            lab_test_type="SomeTestWithObservationsWithExtras"
         )
         with self.assertRaises(exceptions.APIError) as ap:
             test.update_from_dict(data, None)
 
-        err = "unknown extras set(['not_found']) found for <class 'lab.tests.models.SomeDetailedObservation'>"
+        err = "unknown extras set(['not_found']) found for <class 'lab.tests.models.SomeObservationWithExtras'>"
         self.assertEqual(
             str(ap.exception), err
         )
 
     def test_to_dict(self):
-        test = SomeTestWithDetailedObservations.objects.create(
+        test = SomeTestWithObservationsWithExtras.objects.create(
             patient=self.patient
         )
         test.interesting.extras = dict(something="some field")
@@ -142,43 +142,43 @@ class TestExtrasInTests(OpalTestCase):
         self.patient, _ = self.new_patient_and_episode_please()
 
     def test_lab_test_with_extras(self):
-        some_detailed_test = SomeDetailedTest(patient=self.patient)
+        some_detailed_test = SomeTestWithExtras(patient=self.patient)
         some_detailed_test.update_from_dict(dict(
-            lab_test_type="SomeDetailedTest",
+            lab_test_type="SomeTestWithExtras",
             some_name=dict(result="+ve"),
             extras=dict(
                 interesting=2,
             )
         ), None)
-        found_test = SomeDetailedTest.objects.get()
+        found_test = SomeTestWithExtras.objects.get()
         self.assertEqual(found_test.extras["interesting"], 2)
 
     def test_lab_test_with_unknown_extras(self):
-        some_detailed_test = SomeDetailedTest(patient=self.patient)
+        some_detailed_test = SomeTestWithExtras(patient=self.patient)
 
         with self.assertRaises(exceptions.APIError) as ap:
             some_detailed_test.update_from_dict(dict(
-                lab_test_type="SomeDetailedTest",
+                lab_test_type="SomeTestWithExtras",
                 some_name=dict(result="+ve"),
                 extras=dict(
                     interesting=2,
                     not_found="some name"
                 )
             ), None)
-        err = "unknown extras set(['not_found']) found for <class 'lab.tests.models.SomeDetailedTest'>"
+        err = "unknown extras set(['not_found']) found for <class 'lab.tests.models.SomeTestWithExtras'>"
         self.assertEqual(
             str(ap.exception), err
         )
 
     def test_lab_test_to_dict(self):
-        some_detailed_test = SomeDetailedTest(patient=self.patient)
+        some_detailed_test = SomeTestWithExtras(patient=self.patient)
         some_detailed_test.extras = dict(interesting=2)
         some_detailed_test.save()
         as_dict = some_detailed_test.to_dict(None)
         self.assertEqual(as_dict["extras"]["interesting"], 2)
 
     def test_to_dict_if_none(self):
-        some_detailed_test = SomeDetailedTest.objects.create(patient=self.patient)
+        some_detailed_test = SomeTestWithExtras.objects.create(patient=self.patient)
         as_dict = some_detailed_test.to_dict(None)
         self.assertEqual(as_dict["extras"]["interesting"], None)
 

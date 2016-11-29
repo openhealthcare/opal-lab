@@ -165,7 +165,7 @@ An extras json field on the element, allows the capture of miscellanious metadat
 for example
 
 ```python
-class SomeDetailedTest(models.LabTest):
+class SomeTestWithExtras(models.LabTest):
     _extras = ('interesting', 'dont you think')
     some_name = models.PosNeg()
 ```
@@ -173,8 +173,8 @@ class SomeDetailedTest(models.LabTest):
 You can also do this on an observation for example
 
 ```python
-class SomeDetailedObservation(models.Observation):
-    _extras = ('something', 'something else')
+class SomeObservationWithExtras(models.Observation):
+    _extras = ('something', 'something_else')
     RESULT_CHOICES = (
         ("positive", "+ve"),
         ("negative", "-ve")
@@ -186,9 +186,32 @@ class SomeDetailedObservation(models.Observation):
 
 note, if you try to save a field that is not in extras, an exception will be thrown.
 
-Also as these fields are not typed, if you want to use dates/datetimes, you must manage the conversion manually yourself.
+Also as these fields are not typed and do not allow spaces at present. If you want to use dates/datetimes, you must manage the conversion manually yourself.
 
 
+### Template Tags
+```html
+  {% render_observation models.Culture.organism %}
+```
+This renders the observation form for the organism field. This is whatever is returned by observation.get_form_template(), by default this is lab/templates/forms/observations/observation_base.html.
+
+Extra forms are not rendered by default in this template. The template tag however provides there model name to the template along with the observation and the {{ result }} as the model name for the result field, e.g. if we had a class
+
+```python
+class SomeTestWithObsWithExtras(models.LabTest):
+    some_name = models.SomeObservationWithExtras()
+```
+
+render observation would provide the following context
+
+```python
+{
+  "observation": SomeObservationWithExtras,
+  "result": "editing.lab_test.some_name.result",
+  "something": "editing.lab_test.some_name.something",
+  "something_else": "editing.lab_test.some_name.something_else",
+}
+```
 
 ### Metadata
 
