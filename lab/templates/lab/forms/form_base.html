@@ -1,5 +1,6 @@
 {% load lab %}
 {% load forms %}
+{% block lab_form %}
 {% datepicker field="LabTest.date_ordered" %}
 {% for observation in lab_test.retrieve_observations %}
   {% render_observation observation %}
@@ -10,3 +11,6 @@
 {% if lab_test.POTENTIALLY_RESISTANT %}
   {% select field="LabTest.resistant_antibiotics" multiple=True tagging=False search_select=True %}
 {% endif %}
+{% endblock %}
+{% block extra_fields %}
+{% endblock extra_fields %}

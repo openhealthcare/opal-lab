@@ -22,3 +22,28 @@ class SomeAbstractTest(models.LabTest, AbstractBase):
 
 class SomeInherittedTest(SomeAbstractTest):
     pass
+
+class SomeTestWithExtras(models.LabTest):
+    _extras = ('interesting', 'dont you think')
+    some_name = models.PosNeg()
+
+
+class SomeObservationWithExtras(models.Observation):
+    _extras = ('something', 'something else')
+    RESULT_CHOICES = (
+        ("positive", "+ve"),
+        ("negative", "-ve")
+    )
+
+    class Meta:
+        proxy = True
+
+
+class SomeTestWithObservationsWithExtras(models.LabTest):
+    interesting = SomeObservationWithExtras()
+
+class SomeAntimicrobialTest(models.LabTest):
+    antimicrobial = models.Antimicrobial()
+
+class SomeGenericTest(models.LabTest):
+    generic = models.GenericInput()
