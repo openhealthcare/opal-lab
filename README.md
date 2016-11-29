@@ -88,61 +88,29 @@ class CustomTest(LabTest):
 ```
 
 this adds an observation with the name 'issue' from one of the observation fields that lab
-test ships with. This adds the choices 'pending', 'positive', 'negative' to the form
+test ships with. This adds the choices 'pending', 'positive', 'negative' to the form.
 
-Its equivalent to
-
-```python
-# models.py
-from lab.models import LabTest, PendingPosNeg
-
-class CustomTest(LabTest):
-  issue = DynamicResultChoices('pending', '+ve', '-ve')
-```
-
-Further to this as noted, if we want to add a custom results set as RESULT_CHOICES
-on your model
-e.g.
-
-
-```python
-# models.py
-from lab.models import LabTest, PendingPosNeg
-
-class CustomTest(LabTest):
-  issue = PendingPosNeg()
-```
-
-Note in the database we store 20mgs, not orange
-
-Results fields are rendered using the template tag render_observation in lab, and will render the result choices as radio buttons
-
-For example a form with an observation call pathology might be stated like the below.
+observations should be rendered in forms with
 
 ```html
   {% load lab %}
   {% render_observation observations.pathology %}
 ```
 
-Add 'lab.context_processors.lab_tests', 'lab.context_processors.observations' to your template context preprocessors.
+This will render the pathology result as radio buttons of
+'+ve', '-ve', 'unknown'.
 
-This will make your lab tests  available in the templates with the name space lab_tests, e.g. lab_tests.CustomTest for lab tests and observations available with the observsations name space e.g. observations.pathology.
+Lab tests also ships with Antimicrobial and Organism observations, that render with a lookup list of the Lookuplists that ship in Opal. When these render they render as inputs with auto complete.
 
-Now add some lab tests to your models, e.g.
+Now if we add some lab tests to our models.py, e.g.
 
 ```python
-  class Smear(lmodels.LabTest):
-      pathology = lmodels.PosNegUnknown()
-
-      class Meta:
-          proxy = True
-
-
   class HIV(lmodels.LabTest):
     present = lmodels.PosNegUnknown()
 
-    class Meta:
-        proxy = True
+
+  class Smear(lmodels.LabTest):
+      pathology = lmodels.Organism()
 ```
 
 run migrations. Now add a LabTest record panel to your detail page. You'll see by default when you add a lab test you get
@@ -189,6 +157,55 @@ note, if you try to save a field that is not in extras, an exception will be thr
 Also as these fields are not typed and do not allow spaces at present. If you want to use dates/datetimes, you must manage the conversion manually yourself.
 
 
+### How do Lab Tests work.
+As there are literally thousands of different tests that are used. To stop us from having thousands of tables we use django's proxy models to create models that sit on top of the lab_tests table, with links to an observations table.
+
+We then provide some syntactic sugar so that you can use them as if the observations are fields within the tables.
+
+
+### Writing Custom Observations
+opal-labs ships with an the most common use cases however its perfectly possible that you'd like to write observations for your specific requirements.
+
+If you want to just us an observation as a one off you can use the DynamicResultChoices e.g.
+
+```python
+  DynamicResultChoices(result_choices=['some', 'random', 'options'])
+```
+
+otherwise if you have a set of choices, you can inherit from object and put in the result choices.
+
+e.g.
+
+```python
+class SomeObservationWithExtras(models.Observation):
+    RESULT_CHOICES = (
+        ("not_used", "some"),
+        ("not_used", "options")
+    )
+```
+
+Note we don't use the first part of the tuple. "interesting" and "year" are what are displayed to the user and what are saved in the database.
+
+If you want to just use a lookup list, we can do something similar. For on-offs.
+
+```python
+  DynamicLookupList(lookup_list=omodels.SomeLookupList)
+```
+
+or
+
+```python
+class Organism(Observation):
+    class Meta:
+        proxy = True
+
+    lookup_list = omodels.Microbiology_organism
+```
+
+if we just want a generic input we can just use the GenericInput observation, and
+in our template we'll get an ordinary input field.
+
+
 ### Template Tags
 ```html
   {% render_observation models.Culture.organism %}
@@ -216,3 +233,14 @@ render observation would provide the following context
 ### Metadata
 
 This brings in the field result template for each test.
+
+### Synonyms
+
+If a class has synonyms, for example a Chest Xray is sometimes known as CX, these should be declared in _synonyms as part of the class. These will be displayed in the lab test input and will return the same form as the actual model.
+
+for example
+
+```python
+class ChestXray(models.LabTest):
+    _synonyms = ["CX"]
+```

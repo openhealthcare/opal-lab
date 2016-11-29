@@ -23,7 +23,14 @@ class LabTestManager(models.Manager):
         if self.model == LabTest:
             return super(LabTestManager, self).get_queryset()
         else:
-            return super(LabTestManager, self).get_queryset().filter(lab_test_type=self.model.get_display_name())
+            return super(LabTestManager, self).get_queryset().filter(
+                lab_test_type=self.model.get_display_name()
+            )
+
+    def create(self, **kwargs):
+        if not self.model == LabTest:
+            kwargs.update(dict(lab_test_type=self.model.get_display_name()))
+        return super(LabTestManager, self).create(**kwargs)
 
 class ExtrasMixin(object):
     _extras = []
@@ -100,8 +107,7 @@ class Observation(
     @classmethod
     def list(cls):
         for test_class in _itersubclasses(cls):
-            if not isinstance(cls, AbstractBase):
-                yield test_class
+            yield test_class
 
     @classmethod
     def get_class_from_observation_type(cls, observation_type):
@@ -282,6 +288,7 @@ class LabTest(ExtrasMixin, omodels.PatientSubrecord):
 
     _extras = []
     objects = LabTestManager()
+    _synonyms = []
 
     STATUS_CHOICES = (
         ('pending', 'pending'),
@@ -338,6 +345,11 @@ class LabTest(ExtrasMixin, omodels.PatientSubrecord):
             for i in c.observation_fields():
                 yield i
 
+    def get_lab_test_type_from_synonym(self, lab_test_type):
+        for c in LabTest.list():
+            if lab_test_type in c.get_synonyms():
+                return c.get_display_name()
+
     @classmethod
     def all_observation_names(cls):
         for i in cls.all_observations():
@@ -374,6 +386,13 @@ class LabTest(ExtrasMixin, omodels.PatientSubrecord):
             "lab/forms/{}_form.html".format(cls.get_api_name()),
             "lab/forms/form_base.html"
         ])
+
+    @classmethod
+    def get_synonyms(cls):
+        display_name = cls.get_display_name()
+        synonyms = {i: display_name for i in cls._synonyms}
+        synonyms[display_name] = display_name
+        return synonyms
 
     @classmethod
     def get_record(cls):
@@ -458,7 +477,9 @@ class LabTest(ExtrasMixin, omodels.PatientSubrecord):
         observation_data = []
 
         # cast us to the correct type
-        self.lab_test_type = data["lab_test_type"]
+        self.lab_test_type = self.get_lab_test_type_from_synonym(
+            data.pop("lab_test_type")
+        )
         self.get_object()
 
         for observation in self.__class__.observation_fields():

@@ -4,7 +4,7 @@ from opal.core import exceptions
 from lab import models
 from lab.tests.models import (
     Smear, SampleTest, SomeInherittedTest, SomeTestWithExtras,
-    SomeTestWithObservationsWithExtras
+    SomeTestWithObservationsWithExtras, SomeTestWithSynonyms
 )
 
 
@@ -29,6 +29,20 @@ class TestLabTestSave(OpalTestCase):
             "-ve"
         )
 
+    def test_update_with_synonym(self):
+        data_dict = dict(
+            lab_test_type="Also known as",
+            some_observation=dict(result="-ve")
+        )
+        self.assertFalse(models.LabTest.objects.exists())
+        lab_test = models.LabTest(patient=self.patient)
+        lab_test.update_from_dict(data_dict, self.user)
+        found_lab_test = SomeTestWithSynonyms.objects.get()
+        self.assertEqual(
+            found_lab_test.some_observation.result,
+            "-ve"
+        )
+
     def test_to_dict(self):
         lab_test = models.LabTest.objects.create(
             patient=self.patient,
@@ -43,12 +57,23 @@ class TestLabTestSave(OpalTestCase):
 
 
 class TestVerboseName(OpalTestCase):
+    def setUp(self):
+        self.patient, _ = self.new_patient_and_episode_please()
+
     def test_get_display_name(self):
         self.assertEqual(Smear.pathology.get_display_name(), "Pathology")
 
     def test_get_display_name_when_verbose_name_is_set(self):
         self.assertEqual(
             SampleTest.some_observation.get_display_name(), "Verbose Name"
+        )
+        self.smear_test = models.LabTest.objects.create(
+            patient=self.patient,
+            lab_test_type="Smear"
+        )
+        self.sample_test = models.LabTest.objects.create(
+            patient=self.patient,
+            lab_test_type=SampleTest.get_display_name()
         )
 
 
@@ -64,9 +89,8 @@ class TestInheritance(OpalTestCase):
 class TestLabTestManagers(OpalTestCase):
     def setUp(self):
         self.patient, _ = self.new_patient_and_episode_please()
-        self.smear_test = models.LabTest.objects.create(
+        self.smear_test = Smear.objects.create(
             patient=self.patient,
-            lab_test_type="Smear"
         )
         self.sample_test = models.LabTest.objects.create(
             patient=self.patient,
@@ -83,6 +107,27 @@ class TestLabTestManagers(OpalTestCase):
         lab_tests = Smear.objects.all()
         self.assertEqual(lab_tests.count(), 1)
         self.assertEqual(lab_tests.get(id=self.smear_test.id), self.smear_test)
+
+
+class TestSynonymns(OpalTestCase):
+    def test_get_synonyms(self):
+        result = SomeTestWithSynonyms.get_synonyms()
+        self.assertEqual(len(result.keys()), 2)
+        self.assertEqual(
+            result["Some Test With Synonyms"],
+            "Some Test With Synonyms"
+        )
+        self.assertEqual(
+            result["Also known as"],
+            "Some Test With Synonyms"
+        )
+
+    def test_get_synonym_from_lab_test(self):
+        lab_test = models.LabTest()
+        lab_test_type = lab_test.get_lab_test_type_from_synonym(
+            "Also known as"
+        )
+        self.assertEqual(lab_test_type, "Some Test With Synonyms")
 
 
 class TestExtrasInObservations(OpalTestCase):
