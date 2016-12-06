@@ -70,6 +70,7 @@ class Observation(
     _extras = []
 
     RESULT_CHOICES = ()
+    RESULT_DEFAULT = None
     consistency_token = models.CharField(max_length=8)
     observation_type = models.CharField(max_length=256)
     extras = JSONField(blank=True, null=True)
@@ -78,13 +79,15 @@ class Observation(
         blank=True,
         null=True,
         max_length=256,
-        choices=RESULT_CHOICES
+        choices=RESULT_CHOICES,
+        default=RESULT_DEFAULT
     )
 
     name = models.CharField(max_length=255)
 
     def __init__(self, *args, **kwargs):
         self.verbose_name = kwargs.pop("verbose_name", None)
+        self.default = kwargs.pop("default", None)
         super(Observation, self).__init__(*args, **kwargs)
 
     def get_api_name(self):
@@ -131,6 +134,11 @@ class Observation(
         if self.lookup_list:
             return "{}_list".format(self.lookup_list.get_api_name())
 
+    def get_default(self):
+        result = self.__class__._meta.get_field("result")
+        default = self.default or result.get_default()
+        return dict(result=default)
+
     @classmethod
     def get_form_template(cls):
         return find_template([
@@ -148,7 +156,6 @@ class Observation(
             self.name = name
         if self.verbose_name is None and self.name:
             self.verbose_name = self.name.replace('_', ' ')
-
 
 
 class PosNeg(Observation):
@@ -354,6 +361,14 @@ class LabTest(ExtrasMixin, omodels.PatientSubrecord):
     def all_observation_names(cls):
         for i in cls.all_observations():
             yield i.name
+
+    @classmethod
+    def _get_field(cls, name):
+        all_observations = cls.all_observations()
+        for observation in all_observations:
+            if name == observation.name:
+                return observation
+        return super(LabTest, cls)._get_field(name)
 
     @classmethod
     def get_observation_from_name(cls, name):

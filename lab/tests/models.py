@@ -7,7 +7,10 @@ class Smear(models.LabTest):
 
 
 class SampleTest(models.LabTest):
-    some_observation = models.PosNeg(verbose_name="Verbose Name")
+    some_observation = models.PosNeg(
+        verbose_name="Verbose Name",
+        default="+ve"
+    )
 
 
 class SomeTestWithSynonyms(models.LabTest):

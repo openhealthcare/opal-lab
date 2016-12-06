@@ -56,6 +56,21 @@ class TestLabTestSave(OpalTestCase):
         self.assertEqual(result["pathology"]["result"], "-ve")
 
 
+class TestGetSchema(OpalTestCase):
+    def test_build_field_schema(self):
+        with mock.patch.object(models.LabTest, "list") as l:
+            l.return_value = [SampleTest]
+            schema = models.LabTest.build_field_schema()
+
+        obs = [s for s in schema if s["name"] == 'some_observation'][0]
+        self.assertEqual(obs["default"], dict(result="+ve"))
+        self.assertEqual(obs["lookup_list"], None)
+        self.assertEqual(obs["model"], "LabTest")
+        self.assertEqual(obs["name"], 'some_observation')
+        self.assertEqual(obs["title"], 'Some_Observation')
+        self.assertEqual(obs["type"], 'p')
+
+
 class TestVerboseName(OpalTestCase):
     def setUp(self):
         self.patient, _ = self.new_patient_and_episode_please()
@@ -75,6 +90,12 @@ class TestVerboseName(OpalTestCase):
             patient=self.patient,
             lab_test_type=SampleTest.get_display_name()
         )
+
+
+class TestGetField(OpalTestCase):
+    def test_gets_field(self):
+        field = models.LabTest._get_field("some_observation")
+        self.assertEqual(field.name, "some_observation")
 
 
 class TestInheritance(OpalTestCase):

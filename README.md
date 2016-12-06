@@ -119,7 +119,9 @@ an input field which autocompletes to one of the above tests. Note you still nee
 Now in the record panel you should be able to click add, type in Smear and you should get a rendered form with the options for
 pathology of positive/negative/not known.
 
-You can override the form template by putting a form at /templates/lab_tests/forms/{{ model api name }}_form.html
+You can override the form template by putting a form at /templates/lab_tests/forms/{{ model api name }}_form.html.
+
+Note at the moment, observations must all have a unique name. This may change in the future.
 
 ### Other fields on LabTest
 
@@ -244,3 +246,7 @@ for example
 class ChestXray(models.LabTest):
     _synonyms = ["CX"]
 ```
+
+### Defaults
+
+Defaults are currently
