@@ -43,6 +43,21 @@ class TestLabTestSave(OpalTestCase):
             "-ve"
         )
 
+    def test_update_removes_other_observations_in_dict(self):
+        data_dict = dict(
+            lab_test_type="Also known as",
+            some_observation=dict(result="-ve"),
+            some_name=dict(result="-ve")
+        )
+        self.assertFalse(models.LabTest.objects.exists())
+        lab_test = models.LabTest(patient=self.patient)
+        lab_test.update_from_dict(data_dict, self.user)
+        found_lab_test = SomeTestWithSynonyms.objects.get()
+        self.assertEqual(
+            found_lab_test.some_observation.result,
+            "-ve"
+        )
+
     def test_to_dict(self):
         lab_test = models.LabTest.objects.create(
             patient=self.patient,

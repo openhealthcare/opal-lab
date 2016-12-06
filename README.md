@@ -164,6 +164,8 @@ As there are literally thousands of different tests that are used. To stop us fr
 
 We then provide some syntactic sugar so that you can use them as if the observations are fields within the tables.
 
+Note if fields a class has changed test type. Old observations will be discarded on update. Also if observations for a different test type are sent over to the server, these will be ignored.
+
 
 ### Writing Custom Observations
 opal-labs ships with an the most common use cases however its perfectly possible that you'd like to write observations for your specific requirements.
@@ -249,4 +251,4 @@ class ChestXray(models.LabTest):
 
 ### Defaults
 
-Defaults are currently
+Defaults are currently set like you would set a default on an ordinary field.

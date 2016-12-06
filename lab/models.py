@@ -502,6 +502,13 @@ class LabTest(ExtrasMixin, omodels.PatientSubrecord):
             od["name"] = observation.name
             observation_data.append(od)
 
+        # because we change the test type in the same form
+        # we have the risk of them returning observations
+        # that have been set, then the test type changed
+        # we'll nuke these here
+        observation_names = set(self.__class__.all_observation_names())
+        data = {k: v for k, v in data.items() if k not in observation_names}
+
         super(LabTest, self).update_from_dict(data, user, **kwargs)
 
         existing_observations = [
