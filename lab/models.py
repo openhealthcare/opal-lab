@@ -253,6 +253,24 @@ class DefaultLabTestMeta(object):
 
 
 class LabTestMetaclass(CastToProxyClassMetaclass):
+    @classmethod
+    def test_no_default_clashes(cls, new_cls, observation_fields):
+        """
+        """
+        name_to_observation = {
+            observation_field.name: observation_field for observation_field in observation_fields
+        }
+        for other_observation in new_cls.all_observations():
+            if other_observation.name in name_to_observation:
+                our_observation = name_to_observation[other_observation.name]
+                our_default = our_observation.get_default()
+                if not other_observation.get_default() == our_default:
+                    raise ValueError(
+                        'you have 2 observations called {} with defaults, at present this is not supported'.format(
+                            other_observation.name
+                        )
+                    )
+
     def __new__(cls, name, bases, attrs):
         attrs_meta = attrs.get('Meta', None)
 
@@ -283,6 +301,10 @@ class LabTestMetaclass(CastToProxyClassMetaclass):
                 observation_fields.append(val)
 
         new_cls = super(LabTestMetaclass, cls).__new__(cls, name, bases, attrs)
+
+        if not name == 'LabTest':
+            cls.test_no_default_clashes(new_cls, observation_fields)
+
         new_cls._observation_types = observation_fields
         return new_cls
 
