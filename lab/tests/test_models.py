@@ -86,6 +86,14 @@ class TestInheritance(OpalTestCase):
         )
 
 
+class TestLabList(OpalTestCase):
+    def test_list(self):
+        lab_tests = models.LabTest.list()
+        self.assertTrue(len(list(lab_tests)))
+        for test in lab_tests:
+            self.assertIn(models.LabTest, test.__bases__)
+
+
 class TestLabTestManagers(OpalTestCase):
     def setUp(self):
         self.patient, _ = self.new_patient_and_episode_please()
