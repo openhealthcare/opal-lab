@@ -244,3 +244,20 @@ class TestGetFormTemplate(OpalTestCase):
             find_template.call_args[0][0],
             ['lab/forms/smear_form.html', 'lab/forms/form_base.html']
         )
+
+class TestObservations(OpalTestCase):
+    def setUp(self):
+        self.patient, _ = self.new_patient_and_episode_please()
+
+    def test_get_object(self):
+        self.assertFalse(
+            models.LabTest(lab_test_type="Smear").get_object().pathology.id
+        )
+        data_dict = dict(
+            lab_test_type="Smear",
+            pathology=dict(result="-ve")
+        )
+        lab_test = models.LabTest(patient=self.patient)
+        lab_test.update_from_dict(data_dict, self.user)
+        pathology = models.Observation.objects.get()
+        self.assertEqual(pathology.__class__, models.PosNegUnknown)

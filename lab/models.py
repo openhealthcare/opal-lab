@@ -122,6 +122,10 @@ class Observation(
 
         return field_name
 
+    def update_from_dict(self, *args, **kwargs):
+        self.observation_type = self.__class__.get_observation_class()
+        super(Observation, self).update_from_dict(*args, **kwargs)
+
     def get_lookup_list_model_name(self):
         if self.lookup_list:
             return "{}_list".format(self.lookup_list.get_api_name())
