@@ -105,11 +105,6 @@ class Observation(
         return [i[1] for i in self.RESULT_CHOICES]
 
     @classmethod
-    def list(cls):
-        for test_class in _itersubclasses(cls):
-            yield test_class
-
-    @classmethod
     def get_class_from_observation_type(cls, observation_type):
         for test_class in _itersubclasses(cls):
             if test_class.get_observation_class() == observation_type:
