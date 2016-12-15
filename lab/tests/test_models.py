@@ -281,7 +281,7 @@ class TestGetFormTemplate(OpalTestCase):
             ['lab/forms/smear_form.html', 'lab/forms/form_base.html']
         )
 
-        
+
 class TestDefaults(OpalTestCase):
     def test_error_on_different_observation_defaults(self):
         # if we have two observations with the same name but different defaults then
@@ -297,12 +297,12 @@ class TestDefaults(OpalTestCase):
         other_observation.get_default = mock.MagicMock(return_value='left')
 
         with self.assertRaises(ValueError):
-            models.LabTestMetaclass.test_no_default_clashes(
+            models.LabTestMetaclass.validate_no_default_clashes(
                 new_cls,
                 [other_observation]
             )
 
-            
+
 class TestObservations(OpalTestCase):
     def setUp(self):
         self.patient, _ = self.new_patient_and_episode_please()

@@ -253,7 +253,7 @@ class DefaultLabTestMeta(object):
 
 class LabTestMetaclass(CastToProxyClassMetaclass):
     @classmethod
-    def test_no_default_clashes(cls, new_cls, observation_fields):
+    def validate_no_default_clashes(cls, new_cls, observation_fields):
         """
         """
         name_to_observation = {
@@ -302,7 +302,7 @@ class LabTestMetaclass(CastToProxyClassMetaclass):
         new_cls = super(LabTestMetaclass, cls).__new__(cls, name, bases, attrs)
 
         if not name == 'LabTest':
-            cls.test_no_default_clashes(new_cls, observation_fields)
+            cls.validate_no_default_clashes(new_cls, observation_fields)
 
         new_cls._observation_types = observation_fields
         return new_cls
