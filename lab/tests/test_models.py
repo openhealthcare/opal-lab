@@ -32,14 +32,29 @@ class TestLabTestSave(OpalTestCase):
     def test_update_with_synonym(self):
         data_dict = dict(
             lab_test_type="Also known as",
-            some_observation=dict(result="-ve")
+            some_other_observation=dict(result="-ve")
         )
         self.assertFalse(models.LabTest.objects.exists())
         lab_test = models.LabTest(patient=self.patient)
         lab_test.update_from_dict(data_dict, self.user)
         found_lab_test = SomeTestWithSynonyms.objects.get()
         self.assertEqual(
-            found_lab_test.some_observation.result,
+            found_lab_test.some_other_observation.result,
+            "-ve"
+        )
+
+    def test_update_removes_other_observations_in_dict(self):
+        data_dict = dict(
+            lab_test_type="Also known as",
+            some_other_observation=dict(result="-ve"),
+            some_name=dict(result="-ve")
+        )
+        self.assertFalse(models.LabTest.objects.exists())
+        lab_test = models.LabTest(patient=self.patient)
+        lab_test.update_from_dict(data_dict, self.user)
+        found_lab_test = SomeTestWithSynonyms.objects.get()
+        self.assertEqual(
+            found_lab_test.some_other_observation.result,
             "-ve"
         )
 
@@ -54,6 +69,21 @@ class TestLabTestSave(OpalTestCase):
         obs.save()
         result = lab_test.to_dict(self.user)
         self.assertEqual(result["pathology"]["result"], "-ve")
+
+
+class TestGetSchema(OpalTestCase):
+    def test_build_field_schema(self):
+        with mock.patch.object(models.LabTest, "list") as l:
+            l.return_value = [SampleTest]
+            schema = models.LabTest.build_field_schema()
+
+        obs = [s for s in schema if s["name"] == 'some_observation'][0]
+        self.assertEqual(obs["default"], dict(result="+ve"))
+        self.assertEqual(obs["lookup_list"], None)
+        self.assertEqual(obs["model"], "LabTest")
+        self.assertEqual(obs["name"], 'some_observation')
+        self.assertEqual(obs["title"], 'Some_Observation')
+        self.assertEqual(obs["type"], 'p')
 
 
 class TestVerboseName(OpalTestCase):
@@ -75,6 +105,12 @@ class TestVerboseName(OpalTestCase):
             patient=self.patient,
             lab_test_type=SampleTest.get_display_name()
         )
+
+
+class TestGetField(OpalTestCase):
+    def test_gets_field(self):
+        field = models.LabTest._get_field("some_observation")
+        self.assertEqual(field.name, "some_observation")
 
 
 class TestInheritance(OpalTestCase):
@@ -244,6 +280,28 @@ class TestGetFormTemplate(OpalTestCase):
             find_template.call_args[0][0],
             ['lab/forms/smear_form.html', 'lab/forms/form_base.html']
         )
+
+
+class TestDefaults(OpalTestCase):
+    def test_error_on_different_observation_defaults(self):
+        # if we have two observations with the same name but different defaults then
+        # we need to raise an exception as this will break on the client side
+        fake_observation = mock.MagicMock()
+        fake_observation.get_default = mock.MagicMock(return_value='wrong')
+        fake_observation.name = "some_observation"
+        new_cls = mock.MagicMock()
+        new_cls.all_observations.return_value = [fake_observation]
+
+        other_observation = mock.MagicMock()
+        other_observation.name = "some_observation"
+        other_observation.get_default = mock.MagicMock(return_value='left')
+
+        with self.assertRaises(ValueError):
+            models.LabTestMetaclass.validate_no_default_clashes(
+                new_cls,
+                [other_observation]
+            )
+
 
 class TestObservations(OpalTestCase):
     def setUp(self):

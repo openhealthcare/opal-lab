@@ -119,7 +119,9 @@ an input field which autocompletes to one of the above tests. Note you still nee
 Now in the record panel you should be able to click add, type in Smear and you should get a rendered form with the options for
 pathology of positive/negative/not known.
 
-You can override the form template by putting a form at /templates/lab_tests/forms/{{ model api name }}_form.html
+You can override the form template by putting a form at /templates/lab_tests/forms/{{ model api name }}_form.html.
+
+Note at the moment, observations must all have a unique name. This may change in the future.
 
 ### Other fields on LabTest
 
@@ -161,6 +163,8 @@ Also as these fields are not typed and do not allow spaces at present. If you wa
 As there are literally thousands of different tests that are used. To stop us from having thousands of tables we use django's proxy models to create models that sit on top of the lab_tests table, with links to an observations table.
 
 We then provide some syntactic sugar so that you can use them as if the observations are fields within the tables.
+
+Note if fields a class has changed test type. Old observations will be discarded on update. Also if observations for a different test type are sent over to the server, these will be ignored.
 
 
 ### Writing Custom Observations
@@ -244,3 +248,7 @@ for example
 class ChestXray(models.LabTest):
     _synonyms = ["CX"]
 ```
+
+### Defaults
+
+Defaults are currently set like you would set a default on an ordinary field.

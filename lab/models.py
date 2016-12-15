@@ -70,6 +70,7 @@ class Observation(
     _extras = []
 
     RESULT_CHOICES = ()
+    RESULT_DEFAULT = None
     consistency_token = models.CharField(max_length=8)
     observation_type = models.CharField(max_length=256)
     extras = JSONField(blank=True, null=True)
@@ -78,13 +79,15 @@ class Observation(
         blank=True,
         null=True,
         max_length=256,
-        choices=RESULT_CHOICES
+        choices=RESULT_CHOICES,
+        default=RESULT_DEFAULT
     )
 
     name = models.CharField(max_length=255)
 
     def __init__(self, *args, **kwargs):
         self.verbose_name = kwargs.pop("verbose_name", None)
+        self.default = kwargs.pop("default", None)
         super(Observation, self).__init__(*args, **kwargs)
 
     def get_api_name(self):
@@ -130,6 +133,11 @@ class Observation(
         if self.lookup_list:
             return "{}_list".format(self.lookup_list.get_api_name())
 
+    def get_default(self):
+        result = self.__class__._meta.get_field("result")
+        default = self.default or result.get_default()
+        return dict(result=default)
+
     @classmethod
     def get_form_template(cls):
         return find_template([
@@ -147,7 +155,6 @@ class Observation(
             self.name = name
         if self.verbose_name is None and self.name:
             self.verbose_name = self.name.replace('_', ' ')
-
 
 
 class PosNeg(Observation):
@@ -245,6 +252,24 @@ class DefaultLabTestMeta(object):
 
 
 class LabTestMetaclass(CastToProxyClassMetaclass):
+    @classmethod
+    def validate_no_default_clashes(cls, new_cls, observation_fields):
+        """
+        """
+        name_to_observation = {
+            observation_field.name: observation_field for observation_field in observation_fields
+        }
+        for other_observation in new_cls.all_observations():
+            if other_observation.name in name_to_observation:
+                our_observation = name_to_observation[other_observation.name]
+                our_default = our_observation.get_default()
+                if not other_observation.get_default() == our_default:
+                    raise ValueError(
+                        'you have 2 observations called {} with defaults, at present this is not supported'.format(
+                            other_observation.name
+                        )
+                    )
+
     def __new__(cls, name, bases, attrs):
         attrs_meta = attrs.get('Meta', None)
 
@@ -275,6 +300,10 @@ class LabTestMetaclass(CastToProxyClassMetaclass):
                 observation_fields.append(val)
 
         new_cls = super(LabTestMetaclass, cls).__new__(cls, name, bases, attrs)
+
+        if not name == 'LabTest':
+            cls.validate_no_default_clashes(new_cls, observation_fields)
+
         new_cls._observation_types = observation_fields
         return new_cls
 
@@ -353,6 +382,14 @@ class LabTest(ExtrasMixin, omodels.PatientSubrecord):
     def all_observation_names(cls):
         for i in cls.all_observations():
             yield i.name
+
+    @classmethod
+    def _get_field(cls, name):
+        all_observations = cls.all_observations()
+        for observation in all_observations:
+            if name == observation.name:
+                return observation
+        return super(LabTest, cls)._get_field(name)
 
     @classmethod
     def get_observation_from_name(cls, name):
@@ -485,6 +522,13 @@ class LabTest(ExtrasMixin, omodels.PatientSubrecord):
             od = data.pop(observation.name)
             od["name"] = observation.name
             observation_data.append(od)
+
+        # because we change the test type in the same form
+        # we have the risk of them returning observations
+        # that have been set, then the test type changed
+        # we'll nuke these here
+        observation_names = set(self.__class__.all_observation_names())
+        data = {k: v for k, v in data.items() if k not in observation_names}
 
         super(LabTest, self).update_from_dict(data, user, **kwargs)
 
