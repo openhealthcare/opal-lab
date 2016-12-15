@@ -122,6 +122,14 @@ class TestInheritance(OpalTestCase):
         )
 
 
+class TestLabList(OpalTestCase):
+    def test_list(self):
+        lab_tests = models.LabTest.list()
+        self.assertTrue(len(list(lab_tests)))
+        for test in lab_tests:
+            self.assertIn(models.LabTest, test.__bases__)
+
+
 class TestLabTestManagers(OpalTestCase):
     def setUp(self):
         self.patient, _ = self.new_patient_and_episode_please()
@@ -273,6 +281,7 @@ class TestGetFormTemplate(OpalTestCase):
             ['lab/forms/smear_form.html', 'lab/forms/form_base.html']
         )
 
+        
 class TestDefaults(OpalTestCase):
     def test_error_on_different_observation_defaults(self):
         # if we have two observations with the same name but different defaults then
@@ -292,3 +301,21 @@ class TestDefaults(OpalTestCase):
                 new_cls,
                 [other_observation]
             )
+
+            
+class TestObservations(OpalTestCase):
+    def setUp(self):
+        self.patient, _ = self.new_patient_and_episode_please()
+
+    def test_get_object(self):
+        self.assertFalse(
+            models.LabTest(lab_test_type="Smear").get_object().pathology.id
+        )
+        data_dict = dict(
+            lab_test_type="Smear",
+            pathology=dict(result="-ve")
+        )
+        lab_test = models.LabTest(patient=self.patient)
+        lab_test.update_from_dict(data_dict, self.user)
+        pathology = models.Observation.objects.get()
+        self.assertEqual(pathology.__class__, models.PosNegUnknown)

@@ -108,11 +108,6 @@ class Observation(
         return [i[1] for i in self.RESULT_CHOICES]
 
     @classmethod
-    def list(cls):
-        for test_class in _itersubclasses(cls):
-            yield test_class
-
-    @classmethod
     def get_class_from_observation_type(cls, observation_type):
         for test_class in _itersubclasses(cls):
             if test_class.get_observation_class() == observation_type:
@@ -129,6 +124,10 @@ class Observation(
             field_name = field_name.title()
 
         return field_name
+
+    def update_from_dict(self, *args, **kwargs):
+        self.observation_type = self.__class__.get_observation_class()
+        super(Observation, self).update_from_dict(*args, **kwargs)
 
     def get_lookup_list_model_name(self):
         if self.lookup_list:
