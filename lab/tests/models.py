@@ -23,6 +23,10 @@ class SomeAbstractTest(models.LabTest, AbstractBase):
     some_name = models.PosNeg()
 
 
+class SomeReadOnlyTest(models.ReadOnlyLabTest):
+    pass
+
+
 class SomeInherittedTest(SomeAbstractTest):
     pass
 
@@ -50,3 +54,6 @@ class SomeAntimicrobialTest(models.LabTest):
 
 class SomeGenericTest(models.LabTest):
     generic = models.GenericInput()
+
+class SomeReadOnlyLabTest(models.ReadOnlyLabTest):
+    pass

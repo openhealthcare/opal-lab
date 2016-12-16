@@ -4,7 +4,8 @@ from opal.core import exceptions
 from lab import models
 from lab.tests.models import (
     Smear, SampleTest, SomeInherittedTest, SomeTestWithExtras,
-    SomeTestWithObservationsWithExtras, SomeTestWithSynonyms
+    SomeTestWithObservationsWithExtras, SomeTestWithSynonyms,
+    SomeReadOnlyTest
 )
 
 
@@ -28,6 +29,9 @@ class TestLabTestSave(OpalTestCase):
             found_lab_test.pathology.result,
             "-ve"
         )
+
+    def test_custom_update_from_dict_called(self):
+        pass
 
     def test_update_with_synonym(self):
         data_dict = dict(
@@ -319,3 +323,34 @@ class TestObservations(OpalTestCase):
         lab_test.update_from_dict(data_dict, self.user)
         pathology = models.Observation.objects.get()
         self.assertEqual(pathology.__class__, models.PosNegUnknown)
+
+
+class TestReadOnlyLabTest(OpalTestCase):
+    def setUp(self):
+        self.patient, _ = self.new_patient_and_episode_please()
+
+    def test_update_from_dict(self):
+        data_dict = dict(
+            lab_test_type="SomeReadOnlyTest",
+            observations=({
+                "interesting": "things"
+            })
+        )
+        lab_test = models.LabTest(patient=self.patient)
+        lab_test.update_from_dict(data_dict, self.user)
+        self.assertEqual(lab_test.extras["interesting"], "things")
+
+    @mock.patch("lab.models.LabTest.to_dict")
+    def test_to_dict(self, to_dict):
+        read_only = SomeReadOnlyTest.objects.create(
+            patient=self.patient,
+            extras={"interesting": "things"}
+        )
+        to_dict.return_value = {"extras": {"interesting": "things"}}
+        self.assertEqual(
+            read_only.to_dict(None),
+            dict(
+                observations=dict(interesting="things"),
+            )
+        )
+        self.assertTrue(to_dict.called)

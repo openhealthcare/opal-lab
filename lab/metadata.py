@@ -15,5 +15,6 @@ class LabTestMetadata(metadata.Metadata):
                     record_url=lab_test.get_record_url(),
                     display_name=lab_test.get_display_name()
                 )
-                result["lab_tests"]["all_tests"].append(synonym)
+                if lab_test.HAS_FORM:
+                    result["lab_tests"]["all_tests"].append(synonym)
         return result
