@@ -170,7 +170,9 @@ Note if class has changed test type. Old observations will be discarded on updat
 ### Provied Custom Tests
 
 #### ReadOnlyLabTest (Abstract)
-A test inheriting from the read only lab test saves all observations as extras (replacing any other extras).
+A test inheriting from the read only lab test saves all observations as extras as 'observations'.
+
+When serialised, all observations are serialised to 'observations'
 
 This is useful for when you've got lab tests created, for example by an external system. As the observations are not typed in any way the ability to edit is removed.
 

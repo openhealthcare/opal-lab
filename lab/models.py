@@ -322,10 +322,12 @@ class LabTest(
     objects = LabTestManager()
     _synonyms = []
     HAS_FORM = True
+    COMPLETE = "complete"
+    PENDING = "pending"
 
     STATUS_CHOICES = (
-        ('pending', 'pending'),
-        ('complete', 'complete'),
+        (PENDING, PENDING),
+        (COMPLETE, COMPLETE),
     )
 
     # show the sensitive antimicrobial field
@@ -353,6 +355,17 @@ class LabTest(
     )
 
     __metaclass__ = LabTestMetaclass
+
+    def __init__(self, *args, **kwargs):
+        if "lab_test_type" not in kwargs:
+            if not self.__class__ == LabTest:
+                kwargs["lab_test_type"] = self.get_display_name()
+        super(LabTest, self).__init__(*args, **kwargs)
+
+
+    @classmethod
+    def get_form_url(cls):
+        return reverse("form_view", kwargs=dict(model=LabTest.get_api_name()))
 
     @classmethod
     def list(cls):
@@ -586,16 +599,24 @@ class ReadOnlyLabTest(LabTest, AbstractBase):
     def get_extras(self, *args, **kwargs):
         return self.extras
 
+    @classmethod
+    def get_result_form_url(cls):
+        return None
+
     @transaction.atomic()
     def update_from_dict(self, data, *args, **kwargs):
         """
             saves all observations in extras
         """
-        data["extras"] = data.pop("observations", {})
-        return super(ReadOnlyLabTest, self).update_from_dict(data, *args, **kwargs)
+        extras = data.pop("extras", {})
+        extras["observations"] = data.pop("observations", {})
+        data["extras"] = extras
+        return super(ReadOnlyLabTest, self).update_from_dict(
+            data, *args, **kwargs
+        )
 
     @transaction.atomic()
     def to_dict(self, *args, **kwargs):
         result = super(ReadOnlyLabTest, self).to_dict(*args, **kwargs)
-        result["observations"] = result.pop("extras")
+        result["observations"] = result["extras"].pop("observations", {})
         return result
