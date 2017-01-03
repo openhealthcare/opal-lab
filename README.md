@@ -164,7 +164,17 @@ As there are literally thousands of different tests that are used. To stop us fr
 
 We then provide some syntactic sugar so that you can use them as if the observations are fields within the tables.
 
-Note if fields a class has changed test type. Old observations will be discarded on update. Also if observations for a different test type are sent over to the server, these will be ignored.
+Note if class has changed test type. Old observations will be discarded on update. Also if observations for a different test type are sent over to the server, these will be ignored.
+
+
+### Provied Custom Tests
+
+#### ReadOnlyLabTest (Abstract)
+A test inheriting from the read only lab test saves all observations as extras as 'observations'.
+
+When serialised, all observations are serialised to 'observations'
+
+This is useful for when you've got lab tests created, for example by an external system. As the observations are not typed in any way the ability to edit is removed.
 
 
 ### Writing Custom Observations

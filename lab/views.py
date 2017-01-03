@@ -8,7 +8,6 @@ from django.views.generic import TemplateView
 from lab.models import LabTest
 from opal.core.views import LoginRequiredMixin
 
-
 class AbstractLabTestView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, *args, **kwargs):
         ctx = super(AbstractLabTestView, self).get_context_data(*args, **kwargs)

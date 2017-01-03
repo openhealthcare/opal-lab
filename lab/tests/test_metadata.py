@@ -2,6 +2,7 @@ from opal.core.test import OpalTestCase
 from lab.tests.models import (
     SomeTestWithSynonyms, SomeInherittedTest
 )
+from lab import models as lmodels
 import mock
 from lab.metadata import LabTestMetadata
 
@@ -37,3 +38,10 @@ class TestLabTestMetadata(OpalTestCase):
             'Also known as', 'Some Test With Synonyms', 'SomeInherittedTest'
         }
         self.assertEqual(metadata, expected)
+
+    def test_has_tests_false(self, lab_list):
+        ''' read only tests should not appear in the all tests list
+        '''
+        lab_list.return_value = [SomeInherittedTest, lmodels.ReadOnlyLabTest]
+        metadata = set(LabTestMetadata.to_dict()["lab_tests"]["all_tests"])
+        self.assertEqual(metadata, set(["SomeInherittedTest"]))

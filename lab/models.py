@@ -308,19 +308,26 @@ class LabTestMetaclass(CastToProxyClassMetaclass):
         return new_cls
 
 
-class LabTest(ExtrasMixin, omodels.PatientSubrecord):
+class LabTest(
+    ExtrasMixin,
+    omodels.PatientSubrecord,
+    omodels.ExternallySourcedModel
+):
     """
-        a class that adds utitility methods for
+        a class that adds utility methods for
         accessing an objects lab tests
     """
 
     _extras = []
     objects = LabTestManager()
     _synonyms = []
+    HAS_FORM = True
+    COMPLETE = "complete"
+    PENDING = "pending"
 
     STATUS_CHOICES = (
-        ('pending', 'pending'),
-        ('complete', 'complete'),
+        (PENDING, PENDING),
+        (COMPLETE, COMPLETE),
     )
 
     # show the sensitive antimicrobial field
@@ -348,6 +355,17 @@ class LabTest(ExtrasMixin, omodels.PatientSubrecord):
     )
 
     __metaclass__ = LabTestMetaclass
+
+    def __init__(self, *args, **kwargs):
+        if "lab_test_type" not in kwargs:
+            if not self.__class__ == LabTest:
+                kwargs["lab_test_type"] = self.get_display_name()
+        super(LabTest, self).__init__(*args, **kwargs)
+
+
+    @classmethod
+    def get_form_url(cls):
+        return reverse("form_view", kwargs=dict(model=LabTest.get_api_name()))
 
     @classmethod
     def list(cls):
@@ -433,7 +451,7 @@ class LabTest(ExtrasMixin, omodels.PatientSubrecord):
     @classmethod
     def get_record(cls):
         return find_template([
-            "lab_tests/records/{}.html".format(cls.get_api_name()),
+            "lab/records/{}.html".format(cls.get_api_name()),
             "lab/records/record_base.html"
         ])
 
@@ -504,19 +522,20 @@ class LabTest(ExtrasMixin, omodels.PatientSubrecord):
             if test_class.get_api_name() == lab_test_type:
                 return test_class
 
-
     @transaction.atomic()
-    def update_from_dict(self, data, user, **kwargs):
+    def update_from_dict(self, data, *args, **kwargs):
         """ lab tests are foreign keys so have to be saved
             after the initial set of tests
         """
         observation_data = []
 
         # cast us to the correct type
-        self.lab_test_type = self.get_lab_test_type_from_synonym(
-            data.pop("lab_test_type")
-        )
-        self.get_object()
+        if self.__class__ == LabTest:
+            self.lab_test_type = self.get_lab_test_type_from_synonym(
+                data.pop("lab_test_type")
+            )
+            self.get_object()
+            return self.update_from_dict(data, *args, **kwargs)
 
         for observation in self.__class__.observation_fields():
             od = data.pop(observation.name)
@@ -530,7 +549,7 @@ class LabTest(ExtrasMixin, omodels.PatientSubrecord):
         observation_names = set(self.__class__.all_observation_names())
         data = {k: v for k, v in data.items() if k not in observation_names}
 
-        super(LabTest, self).update_from_dict(data, user, **kwargs)
+        super(LabTest, self).update_from_dict(data, *args, **kwargs)
 
         existing_observations = [
             o["id"] for o in observation_data if "id" in o
@@ -545,10 +564,11 @@ class LabTest(ExtrasMixin, omodels.PatientSubrecord):
                 to_save = getattr(self, observation["name"])
                 to_save.lab_test_id = self.id
 
-            to_save.update_from_dict(observation, user, **kwargs)
+            to_save.update_from_dict(observation, *args, **kwargs)
 
         # TODO observations should refresh when changed
         self.refresh_observations()
+
 
     def to_dict(self, user, fields=None):
         observation_names = set(i.name for i in self._observation_types)
@@ -561,3 +581,42 @@ class LabTest(ExtrasMixin, omodels.PatientSubrecord):
             response[observation_name] = getattr(self, observation_name).to_dict(user)
 
         return response
+
+
+class ReadOnlyLabTest(LabTest, AbstractBase):
+    """
+        The read only lab test accepts any observation given to it
+        and stores it in the extras json. They are uneditable in the form.
+
+        This is useful for miscellanious tests coming in from upstream
+    """
+    HAS_FORM = False
+
+    # unfortunately we need to override the extras mixin behaviour
+    def set_extras(self, extras, *args, **kwargs):
+        self.extras = extras
+
+    def get_extras(self, *args, **kwargs):
+        return self.extras
+
+    @classmethod
+    def get_result_form_url(cls):
+        return None
+
+    @transaction.atomic()
+    def update_from_dict(self, data, *args, **kwargs):
+        """
+            saves all observations in extras
+        """
+        extras = data.pop("extras", {})
+        extras["observations"] = data.pop("observations", {})
+        data["extras"] = extras
+        return super(ReadOnlyLabTest, self).update_from_dict(
+            data, *args, **kwargs
+        )
+
+    @transaction.atomic()
+    def to_dict(self, *args, **kwargs):
+        result = super(ReadOnlyLabTest, self).to_dict(*args, **kwargs)
+        result["observations"] = result["extras"].pop("observations", {})
+        return result

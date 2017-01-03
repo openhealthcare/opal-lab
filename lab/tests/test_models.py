@@ -4,7 +4,8 @@ from opal.core import exceptions
 from lab import models
 from lab.tests.models import (
     Smear, SampleTest, SomeInherittedTest, SomeTestWithExtras,
-    SomeTestWithObservationsWithExtras, SomeTestWithSynonyms
+    SomeTestWithObservationsWithExtras, SomeTestWithSynonyms,
+    SomeReadOnlyTest
 )
 
 
@@ -69,6 +70,30 @@ class TestLabTestSave(OpalTestCase):
         obs.save()
         result = lab_test.to_dict(self.user)
         self.assertEqual(result["pathology"]["result"], "-ve")
+
+
+class TestInit(OpalTestCase):
+    def test_with_lab_test(self):
+        lab_test = models.LabTest()
+        self.assertIsNone(lab_test.lab_test_type)
+
+    def test_with_other_test(self):
+        self.assertEquals(SampleTest().lab_test_type, "SampleTest")
+
+
+@mock.patch("lab.models.reverse")
+class TestGetFormUrl(OpalTestCase):
+    def test_with_lab_test(self, reverse):
+        models.LabTest().get_form_url()
+        reverse.assert_called_once_with(
+            'form_view', kwargs={'model': 'lab_test'}
+        )
+
+    def test_with_other_test(self, reverse):
+        SampleTest().get_form_url()
+        reverse.assert_called_once_with(
+            'form_view', kwargs={'model': 'lab_test'}
+        )
 
 
 class TestGetSchema(OpalTestCase):
@@ -319,3 +344,42 @@ class TestObservations(OpalTestCase):
         lab_test.update_from_dict(data_dict, self.user)
         pathology = models.Observation.objects.get()
         self.assertEqual(pathology.__class__, models.PosNegUnknown)
+
+
+class TestReadOnlyLabTest(OpalTestCase):
+    def setUp(self):
+        self.patient, _ = self.new_patient_and_episode_please()
+
+    def test_update_from_dict(self):
+        data_dict = dict(
+            lab_test_type="SomeReadOnlyTest",
+            observations=([{
+                "interesting": "things"
+            }])
+        )
+        lab_test = models.LabTest(patient=self.patient)
+        lab_test.update_from_dict(data_dict, self.user)
+        self.assertEqual(
+            lab_test.extras["observations"][0]["interesting"], "things"
+        )
+
+    @mock.patch("lab.models.LabTest.to_dict")
+    def test_to_dict(self, to_dict):
+        read_only = SomeReadOnlyTest.objects.create(
+            patient=self.patient,
+            extras={"observations": [{"interesting": "things"}]}
+        )
+        to_dict.return_value = {
+            "extras": dict(observations=[{"interesting": "things"}])
+        }
+        self.assertEqual(
+            read_only.to_dict(None),
+            dict(
+                extras={},
+                observations=[dict(interesting="things")],
+            )
+        )
+        self.assertTrue(to_dict.called)
+
+    def test_get_result_form_url(self):
+        self.assertIsNone(SomeReadOnlyTest.get_result_form_url())
