@@ -1,10 +1,10 @@
 {% load forms %}
 {% if observation.get_result_look_up_list %}
-  {% radio label=observation.get_display_name model=result lookuplist=observation.get_result_look_up_list %}
+  {% radio label=label model=result element_name=element_name lookuplist=observation.get_result_look_up_list %}
 {% endif %}
 {% if observation.lookup_list %}
-  {% input label=observation.get_display_name model=result lookuplist=observation.get_lookup_list_model_name %}
+  {% input label=label model=result element_name=element_name lookuplist=observation.get_lookup_list_model_name %}
 {% endif %}
 {% if not observation.get_result_look_up_list and not observation.lookup_list %}
-  {% input label=observation.get_display_name model=result %}
+  {% input label=label model=result element_name=element_name %}
 {% endif %}
