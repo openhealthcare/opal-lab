@@ -30,6 +30,30 @@ class TestLabTestSave(OpalTestCase):
             "-ve"
         )
 
+    def test_consistency_token_logic_applies(self):
+        data_dict = dict(
+            lab_test_type="Smear",
+            pathology=dict(result="-ve")
+        )
+        lab_test = models.LabTest(patient=self.patient)
+        lab_test.update_from_dict(data_dict, self.user)
+        found_lab_test = models.LabTest.objects.get()
+        data_dict = dict(
+            lab_test_type="Smear",
+            pathology=dict(
+                result="+ve",
+                consistency_token=found_lab_test.pathology.consistency_token
+            ),
+            id=found_lab_test.id,
+            consistency_token=found_lab_test.consistency_token,
+        )
+        lab_test.update_from_dict(data_dict, self.user)
+        found_lab_test = models.LabTest.objects.get()
+        self.assertEqual(
+            found_lab_test.pathology.result,
+            "+ve"
+        )
+
     def test_update_with_synonym(self):
         data_dict = dict(
             lab_test_type="Also known as",
