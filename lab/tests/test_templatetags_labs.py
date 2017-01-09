@@ -43,6 +43,23 @@ class LabTemplateContextTestCase(OpalTestCase):
             "lab/forms/observations/observation_base.html"
         )
 
+    def test_adds_element_name_to_the_context(self, get_template):
+        lab.render_observation(self.pos_neg_unknown, element_name="something")
+        get_template().render.call_args[0][0]
+        self.assertEqual(
+            get_template().render.call_args[0][0]["element_name"],
+            "something"
+        )
+
+    def test_doesnt_adds_element_name_false(self, get_template):
+        lab.render_observation(self.pos_neg_unknown)
+        get_template().render.call_args[0][0]
+        self.assertEqual(
+            get_template().render.call_args[0][0]["element_name"],
+            False
+        )
+
+
 
 class LabTemplateRenderingTestCase(OpalTestCase):
     def setUp(self):
@@ -60,6 +77,10 @@ class LabTemplateRenderingTestCase(OpalTestCase):
         self.assertIn("-ve", result)
         self.assertIn("unknown", result)
 
+    def test_renders_an_radio_element_name(self):
+        result = lab.render_observation(self.generic_obs, element_name="something")
+        self.assertIn('name="[[ something ]]"', result)
+
     def test_renders_a_lookup_list_if_theres_a_lookup_list(self):
         result = lab.render_observation(self.antimicrobial_obs)
         self.assertIn("input", result)
@@ -68,3 +89,7 @@ class LabTemplateRenderingTestCase(OpalTestCase):
     def test_renders_an_input_otherwise(self):
         result = lab.render_observation(self.generic_obs)
         self.assertIn("input", result)
+
+    def test_renders_an_input_element_name(self):
+        result = lab.render_observation(self.generic_obs, element_name="something")
+        self.assertIn('name="[[ something ]]"', result)
