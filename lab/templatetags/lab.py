@@ -5,14 +5,23 @@ register = template.Library()
 
 
 @register.simple_tag()
-def render_observation(observation):
+def render_observation(observation, label=None, model=False, element_name=False):
     form_template = observation.get_form_template()
     t = loader.get_template(form_template)
     extras = observation.get_extra_fields()
+    if not model:
+        model = "editing.lab_test.{}.result".format(
+            observation.get_api_name()
+        )
+
+    if not label:
+        label = observation.get_display_name()
 
     ctx = {
         'observation': observation,
-        'result': "editing.lab_test.{}.result".format(observation.get_api_name())
+        'result': model,
+        'label': label,
+        'element_name': element_name
     }
 
     for extra in extras:
