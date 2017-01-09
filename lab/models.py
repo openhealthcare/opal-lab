@@ -7,7 +7,6 @@ from django.db.models.base import ModelBase
 import opal.models as omodels
 from opal.utils import find_template
 from opal.utils import AbstractBase, _itersubclasses, camelcase_to_underscore
-from opal.utils import find_template
 from opal.core.exceptions import APIError
 import copy
 
@@ -31,6 +30,7 @@ class LabTestManager(models.Manager):
         if not self.model == LabTest:
             kwargs.update(dict(lab_test_type=self.model.get_display_name()))
         return super(LabTestManager, self).create(**kwargs)
+
 
 class ExtrasMixin(object):
     _extras = []
@@ -88,6 +88,7 @@ class Observation(
     def __init__(self, *args, **kwargs):
         self.verbose_name = kwargs.pop("verbose_name", None)
         self.default = kwargs.pop("default", None)
+        self.required = kwargs.pop("required", False)
         super(Observation, self).__init__(*args, **kwargs)
 
     def get_api_name(self):
@@ -396,6 +397,16 @@ class LabTest(
             if lab_test_type in c.get_synonyms():
                 return c.get_display_name()
 
+    def cast_to_class(self, lab_test_type):
+        self.lab_test_type = self.get_lab_test_type_from_synonym(lab_test_type)
+        if not self.lab_test_type:
+            raise APIError(
+                "unable to find a lab test type for {}".format(
+                    lab_test_type
+                )
+            )
+        self.get_object()
+
     @classmethod
     def all_observation_names(cls):
         for i in cls.all_observations():
@@ -531,16 +542,22 @@ class LabTest(
 
         # cast us to the correct type
         if self.__class__ == LabTest:
-            self.lab_test_type = self.get_lab_test_type_from_synonym(
-                data.pop("lab_test_type")
-            )
-            self.get_object()
+            self.cast_to_class(data.pop('lab_test_type'))
             return self.update_from_dict(data, *args, **kwargs)
 
         for observation in self.__class__.observation_fields():
-            od = data.pop(observation.name)
-            od["name"] = observation.name
-            observation_data.append(od)
+            od = data.pop(observation.name, False)
+
+            if observation.required and not od:
+                raise APIError(
+                    "{0} is required by {1}",
+                    observation.name,
+                    self.__class__.__name__
+                )
+
+            if od:
+                od["name"] = observation.name
+                observation_data.append(od)
 
         # because we change the test type in the same form
         # we have the risk of them returning observations

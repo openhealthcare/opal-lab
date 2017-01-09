@@ -121,6 +121,14 @@ pathology of positive/negative/not known.
 
 You can override the form template by putting a form at /templates/lab_tests/forms/{{ model api name }}_form.html.
 
+By default all observations are not **required**, if you would like them to be required, pass through the required argument, e.g.
+
+```python
+  class Smear(lmodels.LabTest):
+      pathology = lmodels.Organism(required=True)
+```
+
+
 Note at the moment, observations must all have a unique name. This may change in the future.
 
 ### Other fields on LabTest
@@ -218,6 +226,7 @@ class Organism(Observation):
 
 if we just want a generic input we can just use the GenericInput observation, and
 in our template we'll get an ordinary input field.
+
 
 
 ### Template Tags

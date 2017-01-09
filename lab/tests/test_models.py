@@ -5,7 +5,7 @@ from lab import models
 from lab.tests.models import (
     Smear, SampleTest, SomeInherittedTest, SomeTestWithExtras,
     SomeTestWithObservationsWithExtras, SomeTestWithSynonyms,
-    SomeReadOnlyTest
+    SomeReadOnlyTest, SomeTestWithARequiredObservation
 )
 
 
@@ -81,6 +81,38 @@ class TestLabTestSave(OpalTestCase):
         self.assertEqual(
             found_lab_test.some_other_observation.result,
             "-ve"
+        )
+
+    def test_update_from_dict_with_missing_observations(self):
+        self.assertFalse(
+            models.LabTest(lab_test_type="Smear").get_object().pathology.id
+        )
+        data_dict = dict(
+            lab_test_type="Smear",
+        )
+        self.assertFalse(models.LabTest.objects.exists())
+        lab_test = models.LabTest(patient=self.patient)
+        lab_test.update_from_dict(data_dict, self.user)
+        found_lab_test = models.LabTest.objects.get()
+        self.assertEqual(
+            found_lab_test.pathology.__class__,
+            models.PosNegUnknown
+        )
+
+    def test_update_from_dict_with_missing_required_observations(self):
+        self.assertFalse(
+            models.LabTest(lab_test_type="Smear").get_object().pathology.id
+        )
+        data_dict = dict(
+            lab_test_type="SomeTestWithARequiredObservation",
+        )
+        self.assertFalse(models.LabTest.objects.exists())
+        lab_test = models.LabTest(patient=self.patient)
+        with self.assertRaises(exceptions.APIError) as e:
+            lab_test.update_from_dict(data_dict, self.user)
+        self.assertEqual(
+            e.exception.message,
+            "unable to find a lab test type for SomeTestWithARequiredObservation"
         )
 
     def test_to_dict(self):
@@ -368,6 +400,18 @@ class TestObservations(OpalTestCase):
         lab_test.update_from_dict(data_dict, self.user)
         pathology = models.Observation.objects.get()
         self.assertEqual(pathology.__class__, models.PosNegUnknown)
+
+    def test_required(self):
+        self.assertEqual(
+            SomeTestWithARequiredObservation.some_required_observation.required,
+            True
+        )
+
+    def test_not_required(self):
+        self.assertEqual(
+            SomeTestWithSynonyms.some_other_observation.required,
+            False
+        )
 
 
 class TestReadOnlyLabTest(OpalTestCase):
