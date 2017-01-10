@@ -289,6 +289,9 @@ class LabTestMetaclass(CastToProxyClassMetaclass):
                 attrs_meta.proxy = True
                 attrs_meta.auto_created = True
 
+            if not "_bulk_serialise" in attrs:
+                attrs["_bulk_serialise"]= False
+
             attrs["Meta"] = attrs_meta
 
         for field_name, val in attrs.items():

@@ -370,6 +370,27 @@ class TestObservations(OpalTestCase):
         self.assertEqual(pathology.__class__, models.PosNegUnknown)
 
 
+class TestSerialisation(OpalTestCase):
+    # by default lab_test should be in the serialisation, but not the
+    # lab test types
+    def test__bulk_serialise_flag_set(self):
+        self.assertTrue(models.LabTest._bulk_serialise)
+        self.assertFalse(Smear._bulk_serialise)
+
+    @mock.patch('opal.models.patient_subrecords')
+    @mock.patch('opal.models.episode_subrecords')
+    def test_patient_serialisation(self, episode_subrecords, patient_subrecords):
+        episode_subrecords.return_value = []
+        patient_subrecords.return_value = [models.LabTest, Smear]
+        patient, _ = self.new_patient_and_episode_please()
+        models.LabTest.objects.create(lab_test_type='Smear', patient=patient)
+        to_dict = patient.to_dict(self.user)
+        self.assertNotIn(Smear.get_api_name(), to_dict)
+        self.assertNotIn(Smear.get_api_name(), to_dict['episodes'][1])
+        self.assertIn(models.LabTest.get_api_name(), to_dict)
+        self.assertIn(models.LabTest.get_api_name(), to_dict['episodes'][1])
+
+
 class TestReadOnlyLabTest(OpalTestCase):
     def setUp(self):
         self.patient, _ = self.new_patient_and_episode_please()
