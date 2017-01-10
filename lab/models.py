@@ -398,6 +398,11 @@ class LabTest(
                 return c.get_display_name()
 
     def cast_to_class(self, lab_test_type):
+        """ Takes in a lab test dispay name or synonym.
+            It looks up the lab test that has that.
+            It casts itself to that lab test class and
+            sets its lab_test_type to the display name.
+        """
         self.lab_test_type = self.get_lab_test_type_from_synonym(lab_test_type)
         if not self.lab_test_type:
             raise APIError(
