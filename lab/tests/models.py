@@ -20,7 +20,6 @@ class SomeTestWithSynonyms(models.LabTest):
 
 
 class SomeTestWithARequiredObservation(models.LabTest):
-    _title = "Some Test With Synonyms"
     some_required_observation = models.PosNeg(required=True)
 
 

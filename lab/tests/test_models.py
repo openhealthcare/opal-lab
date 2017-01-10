@@ -100,19 +100,15 @@ class TestLabTestSave(OpalTestCase):
         )
 
     def test_update_from_dict_with_missing_required_observations(self):
-        self.assertFalse(
-            models.LabTest(lab_test_type="Smear").get_object().pathology.id
-        )
         data_dict = dict(
             lab_test_type="SomeTestWithARequiredObservation",
         )
-        self.assertFalse(models.LabTest.objects.exists())
         lab_test = models.LabTest(patient=self.patient)
         with self.assertRaises(exceptions.APIError) as e:
             lab_test.update_from_dict(data_dict, self.user)
         self.assertEqual(
             e.exception.message,
-            "unable to find a lab test type for SomeTestWithARequiredObservation"
+            "some_required_observation is required by SomeTestWithARequiredObservation"
         )
 
     def test_to_dict(self):
@@ -194,13 +190,19 @@ class TestGetField(OpalTestCase):
         self.assertEqual(field.name, "some_observation")
 
 
-class TestInheritance(OpalTestCase):
+class TestMetaClass(OpalTestCase):
     def test_picks_up_inheritied_observations(self):
         self.assertEqual(SomeInherittedTest.some_name.__class__, models.PosNeg)
         self.assertEqual(len(SomeInherittedTest._observation_types), 1)
         self.assertEqual(
             SomeInherittedTest._observation_types[0].name, "some_name"
         )
+
+    def test_set_proxy(self):
+        self.assertFalse(models.LabTest._meta.proxy)
+        self.assertFalse(models.LabTest._meta.auto_created)
+        self.assertTrue(SomeInherittedTest._meta.proxy)
+        self.assertTrue(SomeInherittedTest._meta.auto_created)
 
 
 class TestLabList(OpalTestCase):

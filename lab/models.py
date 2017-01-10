@@ -547,12 +547,12 @@ class LabTest(
 
         for observation in self.__class__.observation_fields():
             od = data.pop(observation.name, False)
-
             if observation.required and not od:
                 raise APIError(
-                    "{0} is required by {1}",
-                    observation.name,
-                    self.__class__.__name__
+                    "{0} is required by {1}".format(
+                        observation.name,
+                        self.__class__.__name__
+                    )
                 )
 
             if od:
