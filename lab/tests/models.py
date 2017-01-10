@@ -19,6 +19,10 @@ class SomeTestWithSynonyms(models.LabTest):
     some_other_observation = models.PosNeg(verbose_name="Verbose Name")
 
 
+class SomeTestWithARequiredObservation(models.LabTest):
+    some_required_observation = models.PosNeg(required=True)
+
+
 class SomeAbstractTest(models.LabTest, AbstractBase):
     some_name = models.PosNeg()
 

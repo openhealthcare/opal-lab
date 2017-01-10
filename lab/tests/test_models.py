@@ -5,7 +5,7 @@ from lab import models
 from lab.tests.models import (
     Smear, SampleTest, SomeInherittedTest, SomeTestWithExtras,
     SomeTestWithObservationsWithExtras, SomeTestWithSynonyms,
-    SomeReadOnlyTest
+    SomeReadOnlyTest, SomeTestWithARequiredObservation
 )
 
 
@@ -83,6 +83,34 @@ class TestLabTestSave(OpalTestCase):
             "-ve"
         )
 
+    def test_update_from_dict_with_missing_observations(self):
+        self.assertFalse(
+            models.LabTest(lab_test_type="Smear").get_object().pathology.id
+        )
+        data_dict = dict(
+            lab_test_type="Smear",
+        )
+        self.assertFalse(models.LabTest.objects.exists())
+        lab_test = models.LabTest(patient=self.patient)
+        lab_test.update_from_dict(data_dict, self.user)
+        found_lab_test = models.LabTest.objects.get()
+        self.assertEqual(
+            found_lab_test.pathology.__class__,
+            models.PosNegUnknown
+        )
+
+    def test_update_from_dict_with_missing_required_observations(self):
+        data_dict = dict(
+            lab_test_type="SomeTestWithARequiredObservation",
+        )
+        lab_test = models.LabTest(patient=self.patient)
+        with self.assertRaises(exceptions.APIError) as e:
+            lab_test.update_from_dict(data_dict, self.user)
+        self.assertEqual(
+            e.exception.message,
+            "some_required_observation is required by SomeTestWithARequiredObservation"
+        )
+
     def test_to_dict(self):
         lab_test = models.LabTest.objects.create(
             patient=self.patient,
@@ -94,6 +122,17 @@ class TestLabTestSave(OpalTestCase):
         obs.save()
         result = lab_test.to_dict(self.user)
         self.assertEqual(result["pathology"]["result"], "-ve")
+
+    def test_cast_to_class(self):
+        lab_test = models.LabTest(patient=self.patient)
+        with self.assertRaises(exceptions.APIError) as e:
+            lab_test.cast_to_class("something that just doesn't exist")
+
+        self.assertEqual(
+            e.exception.message,
+            "unable to find a lab test type for 'something that just doesn't exist'"
+        )
+
 
 
 class TestInit(OpalTestCase):
@@ -162,13 +201,19 @@ class TestGetField(OpalTestCase):
         self.assertEqual(field.name, "some_observation")
 
 
-class TestInheritance(OpalTestCase):
+class TestMetaClass(OpalTestCase):
     def test_picks_up_inheritied_observations(self):
         self.assertEqual(SomeInherittedTest.some_name.__class__, models.PosNeg)
         self.assertEqual(len(SomeInherittedTest._observation_types), 1)
         self.assertEqual(
             SomeInherittedTest._observation_types[0].name, "some_name"
         )
+
+    def test_set_proxy(self):
+        self.assertFalse(models.LabTest._meta.proxy)
+        self.assertFalse(models.LabTest._meta.auto_created)
+        self.assertTrue(SomeInherittedTest._meta.proxy)
+        self.assertTrue(SomeInherittedTest._meta.auto_created)
 
 
 class TestLabList(OpalTestCase):
@@ -368,6 +413,18 @@ class TestObservations(OpalTestCase):
         lab_test.update_from_dict(data_dict, self.user)
         pathology = models.Observation.objects.get()
         self.assertEqual(pathology.__class__, models.PosNegUnknown)
+
+    def test_required(self):
+        self.assertEqual(
+            SomeTestWithARequiredObservation.some_required_observation.required,
+            True
+        )
+
+    def test_not_required(self):
+        self.assertEqual(
+            SomeTestWithSynonyms.some_other_observation.required,
+            False
+        )
 
 
 class TestReadOnlyLabTest(OpalTestCase):
