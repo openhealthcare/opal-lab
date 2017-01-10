@@ -401,7 +401,7 @@ class LabTest(
         self.lab_test_type = self.get_lab_test_type_from_synonym(lab_test_type)
         if not self.lab_test_type:
             raise APIError(
-                "unable to find a lab test type for {}".format(
+                "unable to find a lab test type for '{}'".format(
                     lab_test_type
                 )
             )

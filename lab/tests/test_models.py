@@ -123,6 +123,17 @@ class TestLabTestSave(OpalTestCase):
         result = lab_test.to_dict(self.user)
         self.assertEqual(result["pathology"]["result"], "-ve")
 
+    def test_cast_to_class(self):
+        lab_test = models.LabTest(patient=self.patient)
+        with self.assertRaises(exceptions.APIError) as e:
+            lab_test.cast_to_class("something that just doesn't exist")
+
+        self.assertEqual(
+            e.exception.message,
+            "unable to find a lab test type for 'something that just doesn't exist'"
+        )
+
+
 
 class TestInit(OpalTestCase):
     def test_with_lab_test(self):
