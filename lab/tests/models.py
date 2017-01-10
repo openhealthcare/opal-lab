@@ -53,11 +53,14 @@ class SomeObservationWithExtras(models.Observation):
 class SomeTestWithObservationsWithExtras(models.LabTest):
     interesting = SomeObservationWithExtras()
 
+
 class SomeAntimicrobialTest(models.LabTest):
     antimicrobial = models.Antimicrobial()
 
+
 class SomeGenericTest(models.LabTest):
     generic = models.GenericInput()
+
 
 class SomeReadOnlyLabTest(models.ReadOnlyLabTest):
     pass
