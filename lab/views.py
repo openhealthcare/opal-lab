@@ -5,7 +5,6 @@ Views for the lab OPAL Plugin
 from opal.core.views import LoginRequiredMixin
 from django.views.generic import TemplateView
 
-from lab.models import LabTest
 from opal.core.views import LoginRequiredMixin
 
 class AbstractLabTestView(LoginRequiredMixin, TemplateView):
@@ -19,6 +18,8 @@ class AbstractLabTestView(LoginRequiredMixin, TemplateView):
         Set the context for what this modal is for so
         it can be accessed by all subsequent methods
         """
+        from lab.models import LabTest # Don't complain about importing it before the app is loaded
+
         self.lab_test = LabTest.get_class_from_api_name(kw['model'])
         return super(AbstractLabTestView, self).dispatch(*a, **kw)
 
