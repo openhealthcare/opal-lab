@@ -11,10 +11,10 @@ from opal.core.exceptions import APIError
 import copy
 
 
-class CastToProxyClassMetaclass(ModelBase):
-    def __call__(cls, *args, **kwargs):
-        obj = super(CastToProxyClassMetaclass, cls).__call__(*args, **kwargs)
-        return obj.get_object()
+# class CastToProxyClassMetaclass(ModelBase):
+#     def __call__(cls, *args, **kwargs):
+#         obj = super(CastToProxyClassMetaclass, cls).__call__(*args, **kwargs)
+#         return obj.get_object()
 
 
 class LabTestManager(models.Manager):
@@ -65,7 +65,7 @@ class Observation(
     # we really shouldn't have to declare this
     _advanced_searchable = False
     _is_singleton = False
-    __metaclass__ = CastToProxyClassMetaclass
+    # __metaclass__ = CastToProxyClassMetaclass
     lookup_list = None
     _extras = []
 
@@ -94,16 +94,25 @@ class Observation(
     def get_api_name(self):
         return camelcase_to_underscore(self.name)
 
-    def get_object(self):
-        if self.observation_type:
-            observation_class = self.__class__.get_class_from_observation_type(
-                self.observation_type
-            )
+    @classmethod
+    def from_db(klass, db, field_names, values):
+        new = omodels.TrackedModel.from_db(db, field_names, values)
+        if new.observation_type:
+            newer = klass.get_class_from_observation_type(new.observation_type)
+            if newer:
+                return newer(**dict(zip(field_names, values)))
+        return new
 
-            if observation_class:
-                self.__class__ = observation_class
+    # def get_object(self):
+    #     if self.observation_type:
+    #         observation_class = self.__class__.get_class_from_observation_type(
+    #             self.observation_type
+    #         )
 
-        return self
+    #         if observation_class:
+    #             self.__class__ = observation_class
+
+    #     return self
 
     def get_result_look_up_list(self):
         return [i[1] for i in self.RESULT_CHOICES]
@@ -252,7 +261,7 @@ class DefaultLabTestMeta(object):
     auto_created = True
 
 
-class LabTestMetaclass(CastToProxyClassMetaclass):
+class LabTestMetaclass(ModelBase):
     @classmethod
     def validate_no_default_clashes(cls, new_cls, observation_fields):
         """
@@ -395,25 +404,37 @@ class LabTest(
             for i in c.observation_fields():
                 yield i
 
+    @classmethod
+    def from_db(klass, db, field_names, values):
+        new = omodels.PatientSubrecord.from_db(db, field_names, values)
+        if new.lab_test_type:
+            newer = klass.get_class_from_display_name(new.lab_test_type)
+            if newer:
+                newest = newer(**dict(zip(field_names, values)))
+                newest.refresh_observations()
+                return newest
+
+        return new
+
     def get_lab_test_type_from_synonym(self, lab_test_type):
         for c in LabTest.list():
             if lab_test_type in c.get_synonyms():
                 return c.get_display_name()
 
-    def cast_to_class(self, lab_test_type):
-        """ Takes in a lab test dispay name or synonym.
-            It looks up the lab test that has that.
-            It casts itself to that lab test class and
-            sets its lab_test_type to the display name.
-        """
-        self.lab_test_type = self.get_lab_test_type_from_synonym(lab_test_type)
-        if not self.lab_test_type:
-            raise APIError(
-                "unable to find a lab test type for '{}'".format(
-                    lab_test_type
-                )
-            )
-        self.get_object()
+    # def cast_to_class(self, lab_test_type):
+    #     """ Takes in a lab test dispay name or synonym.
+    #         It looks up the lab test that has that.
+    #         It casts itself to that lab test class and
+    #         sets its lab_test_type to the display name.
+    #     """
+    #     self.lab_test_type = self.get_lab_test_type_from_synonym(lab_test_type)
+    #     if not self.lab_test_type:
+    #         raise APIError(
+    #             "unable to find a lab test type for '{}'".format(
+    #                 lab_test_type
+    #             )
+    #         )
+    #     self.get_object()
 
     @classmethod
     def all_observation_names(cls):
@@ -474,24 +495,24 @@ class LabTest(
             "lab/records/record_base.html"
         ])
 
-    def get_object(self):
-        """
-            casts the class to the metaclass and instatiates either
-            empty observations, or existing observations
+    # def get_object(self):
+    #     """
+    #         casts the class to the metaclass and instatiates either
+    #         empty observations, or existing observations
 
-            TODO what happens if the class is instatiated with one
-            of the proxy fields e.g. LabTest(pathology=pathology)
-        """
-        if self.lab_test_type:
-            lab_test_class = self.__class__.get_class_from_display_name(
-                self.lab_test_type
-            )
+    #         TODO what happens if the class is instatiated with one
+    #         of the proxy fields e.g. LabTest(pathology=pathology)
+    #     """
+    #     if self.lab_test_type:
+    #         lab_test_class = self.__class__.get_class_from_display_name(
+    #             self.lab_test_type
+    #         )
 
-            if lab_test_class:
-                self.__class__ = lab_test_class
+    #         if lab_test_class:
+    #             self.__class__ = lab_test_class
 
-        self.refresh_observations()
-        return self
+    #     self.refresh_observations()
+    #     return self
 
     def retrieve_observations(self):
         existing = {}
