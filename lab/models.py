@@ -293,6 +293,9 @@ class LabTestMetaclass(CastToProxyClassMetaclass):
             if not "_bulk_serialise" in attrs:
                 attrs["_bulk_serialise"]= False
 
+            if not "_advanced_searchable" in attrs:
+                attrs["_serialisable"]= False
+
             attrs["Meta"] = attrs_meta
 
         for field_name, val in attrs.items():
@@ -380,7 +383,7 @@ class LabTest(
         # generic foreign keys aren't added at the moment
         # manually add it
         existing = super(LabTest, cls)._get_fieldnames_to_serialize()
-        existing.extend(cls.all_observation_names())
+        existing.extend(set(cls.all_observation_names()))
         return existing
 
     @classmethod

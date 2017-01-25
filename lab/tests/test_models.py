@@ -134,7 +134,6 @@ class TestLabTestSave(OpalTestCase):
         )
 
 
-
 class TestInit(OpalTestCase):
     def test_with_lab_test(self):
         lab_test = models.LabTest()
@@ -172,6 +171,15 @@ class TestGetSchema(OpalTestCase):
         self.assertEqual(obs["name"], 'some_observation')
         self.assertEqual(obs["title"], 'Some_Observation')
         self.assertEqual(obs["type"], 'p')
+
+    def test_get_fieldnames_to_serialize(self):
+        with mock.patch.object(models.LabTest, "all_observation_names") as l:
+            l.return_value = ["result", "result", "some_obs"]
+            field_names = models.LabTest._get_fieldnames_to_serialize()
+
+        self.assertIn("result", field_names)
+        self.assertIn("some_obs", field_names)
+        self.assertEqual(len([i for i in field_names if i == "result"]), 1)
 
 
 class TestVerboseName(OpalTestCase):
@@ -430,9 +438,13 @@ class TestObservations(OpalTestCase):
 class TestSerialisation(OpalTestCase):
     # by default lab_test should be in the serialisation, but not the
     # lab test types
-    def test__bulk_serialise_flag_set(self):
+    def test_bulk_serialise_flag_set(self):
         self.assertTrue(models.LabTest._bulk_serialise)
         self.assertFalse(Smear._bulk_serialise)
+
+    def test_bulk_serialisable_flag_set(self):
+        self.assertTrue(models.LabTest._serialisable)
+        self.assertFalse(Smear._serialisable)
 
     @mock.patch('opal.models.patient_subrecords')
     @mock.patch('opal.models.episode_subrecords')
