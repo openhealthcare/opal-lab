@@ -284,17 +284,12 @@ class LabTestMetaclass(CastToProxyClassMetaclass):
         # We don't want to add the proxy message if its a the
         # concrete model
         if not name == 'LabTest':
+            attrs["_ignore_as_subrecord"] = True
             if not attrs_meta:
                 attrs_meta = DefaultLabTestMeta
             else:
                 attrs_meta.proxy = True
                 attrs_meta.auto_created = True
-
-            if not "_bulk_serialise" in attrs:
-                attrs["_bulk_serialise"]= False
-
-            if not "_advanced_searchable" in attrs:
-                attrs["_serialisable"]= False
 
             attrs["Meta"] = attrs_meta
 
@@ -596,7 +591,6 @@ class LabTest(
 
         # TODO observations should refresh when changed
         self.refresh_observations()
-
 
     def to_dict(self, user, fields=None):
         observation_names = set(i.name for i in self._observation_types)

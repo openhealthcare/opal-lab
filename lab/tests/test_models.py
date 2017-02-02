@@ -438,13 +438,9 @@ class TestObservations(OpalTestCase):
 class TestSerialisation(OpalTestCase):
     # by default lab_test should be in the serialisation, but not the
     # lab test types
-    def test_bulk_serialise_flag_set(self):
-        self.assertTrue(models.LabTest._bulk_serialise)
-        self.assertFalse(Smear._bulk_serialise)
-
-    def test_bulk_serialisable_flag_set(self):
-        self.assertTrue(models.LabTest._serialisable)
-        self.assertFalse(Smear._serialisable)
+    def test__ignore_as_subrecord_set(self):
+        self.assertFalse(models.LabTest._ignore_as_subrecord)
+        self.assertTrue(Smear._ignore_as_subrecord)
 
     @mock.patch('opal.models.patient_subrecords')
     @mock.patch('opal.models.episode_subrecords')
