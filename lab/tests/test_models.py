@@ -442,11 +442,9 @@ class TestSerialisation(OpalTestCase):
         self.assertFalse(models.LabTest._exclude_from_subrecords)
         self.assertTrue(Smear._exclude_from_subrecords)
 
-    @mock.patch('opal.models.patient_subrecords')
     @mock.patch('opal.models.episode_subrecords')
-    def test_patient_serialisation(self, episode_subrecords, patient_subrecords):
+    def test_patient_serialisation(self, episode_subrecords):
         episode_subrecords.return_value = []
-        patient_subrecords.return_value = [models.LabTest, Smear]
         patient, _ = self.new_patient_and_episode_please()
         models.LabTest.objects.create(lab_test_type='Smear', patient=patient)
         to_dict = patient.to_dict(self.user)

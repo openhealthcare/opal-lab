@@ -284,7 +284,9 @@ class LabTestMetaclass(CastToProxyClassMetaclass):
         # We don't want to add the proxy message if its a the
         # concrete model
         if not name == 'LabTest':
-            attrs["_exclude_from_subrecords"] = True
+            if "_exclude_from_subrecords" not in attrs:
+                attrs["_exclude_from_subrecords"] = True
+
             if not attrs_meta:
                 attrs_meta = DefaultLabTestMeta
             else:
