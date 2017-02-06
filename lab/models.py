@@ -284,14 +284,14 @@ class LabTestMetaclass(CastToProxyClassMetaclass):
         # We don't want to add the proxy message if its a the
         # concrete model
         if not name == 'LabTest':
+            if "_exclude_from_subrecords" not in attrs:
+                attrs["_exclude_from_subrecords"] = True
+
             if not attrs_meta:
                 attrs_meta = DefaultLabTestMeta
             else:
                 attrs_meta.proxy = True
                 attrs_meta.auto_created = True
-
-            if not "_bulk_serialise" in attrs:
-                attrs["_bulk_serialise"]= False
 
             attrs["Meta"] = attrs_meta
 
@@ -380,7 +380,7 @@ class LabTest(
         # generic foreign keys aren't added at the moment
         # manually add it
         existing = super(LabTest, cls)._get_fieldnames_to_serialize()
-        existing.extend(cls.all_observation_names())
+        existing.extend(set(cls.all_observation_names()))
         return existing
 
     @classmethod
@@ -593,7 +593,6 @@ class LabTest(
 
         # TODO observations should refresh when changed
         self.refresh_observations()
-
 
     def to_dict(self, user, fields=None):
         observation_names = set(i.name for i in self._observation_types)
