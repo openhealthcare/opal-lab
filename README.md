@@ -1,4 +1,4 @@
-This is lab - an [OPAL](https://github.com/openhealthcare/opal) plugin.
+This is lab - an [Opal](https://github.com/openhealthcare/opal) plugin.
 
 
 [![Build
@@ -8,7 +8,7 @@ Status](https://travis-ci.org/openhealthcare/opal-lab.png)](https://travis-ci.or
 
 ### Summary
 
-LabTests are an abstraction for the OPAL framework that allows for the inclusion of different types of test.
+LabTests are an abstraction for the Opal framework that allows for the inclusion of different types of test.
 
 To declare tests, you can just declare a proxy class that inherits from LabTest for example:
 
@@ -40,7 +40,7 @@ This serialises to editing.lab_tests
 }
 ```
 
-This is an abstraction for the OPAL framework that allows the inclusion of different types of test.
+This is an abstraction for the Opal framework that allows the inclusion of different types of test.
 
 # Installation
 
