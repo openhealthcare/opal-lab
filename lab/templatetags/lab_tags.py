@@ -5,7 +5,7 @@ register = template.Library()
 
 
 @register.simple_tag()
-def render_observation(observation, label=None, model=False, element_name=False):
+def observation_form(observation, label=None, model=False, element_name=False):
     form_template = observation.get_form_template()
     t = loader.get_template(form_template)
     extras = observation.get_extra_fields()

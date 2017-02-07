@@ -3,7 +3,7 @@
 {% block lab_form %}
 {% datepicker field="LabTest.date_ordered" %}
 {% for observation in lab_test.retrieve_observations %}
-  {% render_observation observation %}
+  {% observation_form observation %}
 {% endfor %}
 {% if lab_test.POTENTIALLY_SENSITIVE %}
   {% select field="LabTest.sensitive_antibiotics" multiple=True tagging=False search_select=True %}
