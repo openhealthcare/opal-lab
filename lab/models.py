@@ -530,12 +530,6 @@ class LabTest(
         return reverse("lab_record_view", kwargs=dict(model=cls.get_api_name()))
 
     @classmethod
-    def get_class_from_name(cls, lab_test_type):
-        for test_class in _itersubclasses(cls):
-            if test_class.__name__ == lab_test_type:
-                return test_class
-
-    @classmethod
     def get_class_from_display_name(cls, lab_test_type):
         for test_class in _itersubclasses(cls):
             if test_class.get_display_name() == lab_test_type:
