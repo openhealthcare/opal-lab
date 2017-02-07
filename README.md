@@ -94,7 +94,7 @@ Observations should be rendered in forms with
 
 ```html
   {% load lab_tags %}
-  {% render_observation observations.pathology %}
+  {% observation_form observations.pathology %}
 ```
 
 This will render the pathology result as radio buttons of
@@ -242,7 +242,7 @@ This means you can then refer to any of your lab tests in your templates, e.g.
 ### Template Tags
 
 ```html
-  {% render_observation lab_tests.Culture.organism %}
+  {% observation_form lab_tests.Culture.organism %}
 ```
 As long as you have updated your context processors, this will render the observation form for the organism field. This is whatever is returned by observation.get_form_template(), by default this is lab/templates/forms/observations/observation_base.html.
 
