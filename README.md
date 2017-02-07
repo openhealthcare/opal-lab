@@ -77,7 +77,7 @@ class CustomTest(LabTest):
 If you save a lab_test with test_name "custom_test" for all it will use your custom
 logic when being deserialised.
 
-we can now add observations to CustomTest
+We can now add observations to CustomTest
 
 ```python
 # models.py
@@ -87,13 +87,13 @@ class CustomTest(LabTest):
   issue = PendingPosNeg()
 ```
 
-this adds an observation with the name 'issue' from one of the observation fields that lab
+This adds an observation with the name 'issue' from one of the observation fields that lab
 test ships with. This adds the choices 'pending', 'positive', 'negative' to the form.
 
-observations should be rendered in forms with
+Observations should be rendered in forms with
 
 ```html
-  {% load lab %}
+  {% load lab_tags %}
   {% render_observation observations.pathology %}
 ```
 
@@ -168,6 +168,7 @@ Also as these fields are not typed and do not allow spaces at present. If you wa
 
 
 ### How do Lab Tests work.
+
 As there are literally thousands of different tests that are used. To stop us from having thousands of tables we use django's proxy models to create models that sit on top of the lab_tests table, with links to an observations table.
 
 We then provide some syntactic sugar so that you can use them as if the observations are fields within the tables.
@@ -227,13 +228,23 @@ class Organism(Observation):
 if we just want a generic input we can just use the GenericInput observation, and
 in our template we'll get an ordinary input field.
 
+### Template Context Processors
+
+Add 'lab.context_processors.lab_tests', to your template context processors.
+
+This means you can then refer to any of your lab tests in your templates, e.g.
+
+```html
+  {% include lab_tests.Culture.get_form_template %}
+```
 
 
 ### Template Tags
+
 ```html
-  {% render_observation models.Culture.organism %}
+  {% render_observation lab_tests.Culture.organism %}
 ```
-This renders the observation form for the organism field. This is whatever is returned by observation.get_form_template(), by default this is lab/templates/forms/observations/observation_base.html.
+As long as you have updated your context processors, this will render the observation form for the organism field. This is whatever is returned by observation.get_form_template(), by default this is lab/templates/forms/observations/observation_base.html.
 
 Extra forms are not rendered by default in this template. The template tag however provides there model name to the template along with the observation and the {{ result }} as the model name for the result field, e.g. if we had a class
 
@@ -242,7 +253,7 @@ class SomeTestWithObsWithExtras(models.LabTest):
     some_name = models.SomeObservationWithExtras()
 ```
 
-render observation would provide the following context
+Render observation would provide the following context
 
 ```python
 {
@@ -261,7 +272,7 @@ This brings in the field result template for each test.
 
 If a class has synonyms, for example a Chest Xray is sometimes known as CX, these should be declared in _synonyms as part of the class. These will be displayed in the lab test input and will return the same form as the actual model.
 
-for example
+For example
 
 ```python
 class ChestXray(models.LabTest):
