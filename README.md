@@ -93,7 +93,7 @@ test ships with. This adds the choices 'pending', 'positive', 'negative' to the 
 observations should be rendered in forms with
 
 ```html
-  {% load lab %}
+  {% load lab_tags %}
   {% render_observation observations.pathology %}
 ```
 
@@ -227,13 +227,21 @@ class Organism(Observation):
 if we just want a generic input we can just use the GenericInput observation, and
 in our template we'll get an ordinary input field.
 
+### Template Context Processors
+add 'lab.context_processors.lab_tests', to your template context processors.
+
+This means you can then refer to any of your lab tests in your templates, e.g.
+
+```html
+  {% include lab_tests.Culture.get_form_template %}
+```
 
 
 ### Template Tags
 ```html
-  {% render_observation models.Culture.organism %}
+  {% render_observation lab_tests.Culture.organism %}
 ```
-This renders the observation form for the organism field. This is whatever is returned by observation.get_form_template(), by default this is lab/templates/forms/observations/observation_base.html.
+As long as you have updated your context processors, this will render the observation form for the organism field. This is whatever is returned by observation.get_form_template(), by default this is lab/templates/forms/observations/observation_base.html.
 
 Extra forms are not rendered by default in this template. The template tag however provides there model name to the template along with the observation and the {{ result }} as the model name for the result field, e.g. if we had a class
 
