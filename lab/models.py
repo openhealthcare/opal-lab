@@ -321,7 +321,7 @@ class LabTest(
         a class that adds utility methods for
         accessing an objects lab tests
     """
-
+    _icon = 'fa fa-crosshairs'
     _extras = []
     objects = LabTestManager()
     _synonyms = []
