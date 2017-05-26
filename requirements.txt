@@ -3,4 +3,4 @@ django-choices==1.4.4
 python-dateutil==2.4.2
 mock
 jsonfield==1.0.3
--e git://github.com/openhealthcare/opal.git@v0.8.1#egg=opal
+opal==0.8.1
