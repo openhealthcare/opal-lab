@@ -347,8 +347,8 @@ class LabTest(
         choices=STATUS_CHOICES
     )
     lab_test_type = models.CharField(max_length=256, blank=True, null=True)
-    date_ordered = models.DateField(blank=True, null=True)
-    date_received = models.DateField(blank=True, null=True)
+    datetime_ordered = models.DateField(blank=True, null=True)
+    datetime_received = models.DateField(blank=True, null=True)
     extras = JSONField(blank=True, null=True)
 
     sensitive_antibiotics = models.ManyToManyField(
