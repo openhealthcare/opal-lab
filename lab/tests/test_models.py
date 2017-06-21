@@ -101,7 +101,7 @@ class TestLabTestSave(OpalTestCase):
 
     def test_update_from_dict_with_missing_required_observations(self):
         data_dict = dict(
-            lab_test_type="SomeTestWithARequiredObservation",
+            lab_test_type="Some Test With A Required Observation",
         )
         lab_test = models.LabTest(patient=self.patient)
         with self.assertRaises(exceptions.APIError) as e:
@@ -140,7 +140,7 @@ class TestInit(OpalTestCase):
         self.assertIsNone(lab_test.lab_test_type)
 
     def test_with_other_test(self):
-        self.assertEquals(SampleTest().lab_test_type, "SampleTest")
+        self.assertEquals(SampleTest().lab_test_type, "Sample Test")
 
 
 @mock.patch("lab.models.reverse")
@@ -289,7 +289,7 @@ class TestExtrasInObservations(OpalTestCase):
                 result="+ve",
                 extras=dict(something="some field"),
             ),
-            lab_test_type="SomeTestWithObservationsWithExtras"
+            lab_test_type="Some Test With Observations With Extras"
         )
 
         test.update_from_dict(data, None)
@@ -335,7 +335,7 @@ class TestExtrasInTests(OpalTestCase):
     def test_lab_test_with_extras(self):
         some_detailed_test = SomeTestWithExtras(patient=self.patient)
         some_detailed_test.update_from_dict(dict(
-            lab_test_type="SomeTestWithExtras",
+            lab_test_type="Some Test With Extras",
             some_name=dict(result="+ve"),
             extras=dict(
                 interesting=2,
@@ -349,7 +349,7 @@ class TestExtrasInTests(OpalTestCase):
 
         with self.assertRaises(exceptions.APIError) as ap:
             some_detailed_test.update_from_dict(dict(
-                lab_test_type="SomeTestWithExtras",
+                lab_test_type="Some Test With Extras",
                 some_name=dict(result="+ve"),
                 extras=dict(
                     interesting=2,
@@ -460,7 +460,7 @@ class TestReadOnlyLabTest(OpalTestCase):
 
     def test_update_from_dict(self):
         data_dict = dict(
-            lab_test_type="SomeReadOnlyTest",
+            lab_test_type="Some Read Only Test",
             observations=([{
                 "interesting": "things"
             }])
