@@ -1,7 +1,7 @@
 {% load lab_tags %}
 {% load forms %}
 {% block lab_form %}
-{% datepicker field="LabTest.date_ordered" %}
+{% datetimepicker field="LabTest.datetime_ordered" %}
 {% for observation in lab_test.retrieve_observations %}
   {% observation_form observation %}
 {% endfor %}
