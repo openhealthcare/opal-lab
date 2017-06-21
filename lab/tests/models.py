@@ -34,6 +34,7 @@ class SomeReadOnlyTest(models.ReadOnlyLabTest):
 class SomeInherittedTest(SomeAbstractTest):
     pass
 
+
 class SomeTestWithExtras(models.LabTest):
     _extras = ('interesting', 'dont you think')
     some_name = models.PosNeg()
