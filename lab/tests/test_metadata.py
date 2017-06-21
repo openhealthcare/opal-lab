@@ -26,16 +26,16 @@ class TestLabTestMetadata(OpalTestCase):
 
         some_inherited_test = {
             'result_form_url': u'/templates/lab_tests/forms/some_inheritted_test_form.html',
-            'display_name': 'SomeInherittedTest',
+            'display_name': 'Some Inheritted Test',
             'record_url': u'/templates/lab_tests/record/some_inheritted_test.html'
         }
-        self.assertEqual(metadata["SomeInherittedTest"], some_inherited_test)
+        self.assertEqual(metadata["Some Inheritted Test"], some_inherited_test)
 
     def test_all_tests(self, lab_list):
         lab_list.return_value = [SomeTestWithSynonyms, SomeInherittedTest]
         metadata = set(LabTestMetadata.to_dict()["lab_tests"]["all_tests"])
         expected = {
-            'Also known as', 'Some Test With Synonyms', 'SomeInherittedTest'
+            'Also known as', 'Some Test With Synonyms', 'Some Inheritted Test'
         }
         self.assertEqual(metadata, expected)
 
@@ -44,4 +44,4 @@ class TestLabTestMetadata(OpalTestCase):
         '''
         lab_list.return_value = [SomeInherittedTest, lmodels.ReadOnlyLabTest]
         metadata = set(LabTestMetadata.to_dict()["lab_tests"]["all_tests"])
-        self.assertEqual(metadata, set(["SomeInherittedTest"]))
+        self.assertEqual(metadata, set(["Some Inheritted Test"]))
