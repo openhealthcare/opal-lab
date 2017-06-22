@@ -1,5 +1,5 @@
 {% load lab_tags %}
-<strong>[[ item.lab_test_type ]] <span ng-show="item.date_ordered">([[ item.date_ordered | shortDate ]])</span></strong>
+<strong>[[ item.lab_test_type ]] <span ng-show="item.datetime_ordered">([[ item.datetime_ordered | shortDate ]])</span></strong>
 {% for observation in lab_test.retrieve_observations %}
   <span ng-show="item.{{ observation.name }}.result">
     {{ observation.get_display_name }}: [[ item.{{ observation.name }}.result ]]
