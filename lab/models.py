@@ -281,6 +281,10 @@ class LabTestMetaclass(CastToProxyClassMetaclass):
 
         observation_fields = []
 
+        debug = False
+        if name == 'SomeAbstractTest':
+            debug = True
+
         for base in bases:
             if hasattr(base, "_observation_types"):
                 observation_fields.extend(base._observation_types)
@@ -303,7 +307,6 @@ class LabTestMetaclass(CastToProxyClassMetaclass):
         for field_name, val in attrs.items():
             attr_class = getattr(val, "__class__", None)
             if attr_class and issubclass(attr_class, Observation):
-                attrs.pop(field_name)
                 val.set_attributes_from_name(field_name)
                 attrs[field_name] = val
                 observation_fields.append(val)
