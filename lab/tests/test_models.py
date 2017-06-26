@@ -434,6 +434,25 @@ class TestObservations(OpalTestCase):
             False
         )
 
+    def test_dynamic_lookup_list(self):
+        dn = models.DynamicLookupList(lookup_list="trees")
+        self.assertEqual(
+            dn.lookup_list,
+            "trees"
+        )
+
+    def test_dynamic_result_choices(self):
+        dc = models.DynamicResultChoices(result_choices="trees")
+        self.assertEqual(
+            dc.result_choices,
+            "trees"
+        )
+
+        self.assertEqual(
+            dc.get_result_look_up_list(),
+            "trees"
+        )
+
 
 class TestSerialisation(OpalTestCase):
     # by default lab_test should be in the serialisation, but not the
