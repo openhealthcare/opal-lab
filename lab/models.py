@@ -44,7 +44,7 @@ class ExtrasMixin(object):
         unknown_fields = set(extras.keys()) - set(self.get_extra_fields())
         if unknown_fields:
             raise APIError("unknown extras {0} found for {1}".format(
-                unknown_fields, self.__class__
+                ", ".join(unknown_fields), self.__class__
             ))
         self.extras = extras
 
@@ -59,13 +59,16 @@ class ExtrasMixin(object):
         return existing_extras
 
 
-class Observation(
-    ExtrasMixin, omodels.UpdatesFromDictMixin, omodels.ToDictMixin, omodels.TrackedModel
-):
+class Observation(six.with_metaclass(
+    CastToProxyClassMetaclass,
+    ExtrasMixin,
+    omodels.UpdatesFromDictMixin,
+    omodels.ToDictMixin,
+    omodels.TrackedModel
+)):
     # we really shouldn't have to declare this
     _advanced_searchable = False
     _is_singleton = False
-    __metaclass__ = CastToProxyClassMetaclass
     lookup_list = None
     _extras = []
 
@@ -201,6 +204,7 @@ class PosNegEquivicalNotDone(Observation):
         ("not done", "not done"),
     )
 
+
 class GenericInput(Observation):
     class Meta:
         proxy = True
@@ -211,6 +215,7 @@ class Antimicrobial(Observation):
         proxy = True
 
     lookup_list = omodels.Antimicrobial
+
 
 class Organism(Observation):
     class Meta:
@@ -298,7 +303,6 @@ class LabTestMetaclass(CastToProxyClassMetaclass):
         for field_name, val in attrs.items():
             attr_class = getattr(val, "__class__", None)
             if attr_class and issubclass(attr_class, Observation):
-                attrs.pop(field_name)
                 val.set_attributes_from_name(field_name)
                 attrs[field_name] = val
                 observation_fields.append(val)
@@ -312,11 +316,12 @@ class LabTestMetaclass(CastToProxyClassMetaclass):
         return new_cls
 
 
-class LabTest(
+class LabTest(six.with_metaclass(
+    LabTestMetaclass,
     ExtrasMixin,
     omodels.PatientSubrecord,
     omodels.ExternallySourcedModel
-):
+)):
     """
         a class that adds utility methods for
         accessing an objects lab tests
@@ -358,14 +363,11 @@ class LabTest(
         omodels.Antimicrobial, related_name="test_resistant"
     )
 
-    __metaclass__ = LabTestMetaclass
-
     def __init__(self, *args, **kwargs):
         if "lab_test_type" not in kwargs:
             if not self.__class__ == LabTest:
                 kwargs["lab_test_type"] = self.get_display_name()
         super(LabTest, self).__init__(*args, **kwargs)
-
 
     @classmethod
     def get_form_url(cls):

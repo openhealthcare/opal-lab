@@ -30,25 +30,25 @@ class TestAllLabTests(OpalTestCase):
         return response.content
 
     def test_lookup_list_render(self):
-        content = self.get_form_response(test_models.SomeAntimicrobialTest)
+        content = str(self.get_form_response(test_models.SomeAntimicrobialTest))
         self.assertIn("antimicrobial_list", content)
         self.assertIn("input", content)
 
     def test_choices_render(self):
-        content = self.get_form_response(test_models.Smear)
+        content = str(self.get_form_response(test_models.Smear))
         self.assertIn("+ve", content)
         self.assertIn("-ve", content)
         self.assertIn("radio", content)
         self.assertIn("pathology", content)
 
     def test_input_render(self):
-        content = self.get_form_response(test_models.SomeGenericTest)
+        content = str(self.get_form_response(test_models.SomeGenericTest))
         self.assertNotIn("lookup_list", content)
         self.assertIn("input", content)
 
     def test_record_render(self):
         content = self.get_form_response(test_models.Smear)
-        self.assertIn("pathology", content)
+        self.assertIn("pathology", str(content))
 
     def test_form_not_logged_in(self):
         model = test_models.SomeAntimicrobialTest
@@ -75,6 +75,6 @@ class TestReadOnlyLabTest(OpalTestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
-            response.content.strip(),
+            response.content.strip().decode('ascii'),
             "some read only record"
         )

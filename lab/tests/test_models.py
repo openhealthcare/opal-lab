@@ -107,7 +107,7 @@ class TestLabTestSave(OpalTestCase):
         with self.assertRaises(exceptions.APIError) as e:
             lab_test.update_from_dict(data_dict, self.user)
         self.assertEqual(
-            e.exception.message,
+            str(e.exception),
             "some_required_observation is required by SomeTestWithARequiredObservation"
         )
 
@@ -129,7 +129,7 @@ class TestLabTestSave(OpalTestCase):
             lab_test.cast_to_class("something that just doesn't exist")
 
         self.assertEqual(
-            e.exception.message,
+            str(e.exception),
             "unable to find a lab test type for 'something that just doesn't exist'"
         )
 
@@ -210,7 +210,7 @@ class TestGetField(OpalTestCase):
 
 
 class TestMetaClass(OpalTestCase):
-    def test_picks_up_inheritied_observations(self):
+    def test_picks_up_inherited_observations(self):
         self.assertEqual(SomeInherittedTest.some_name.__class__, models.PosNeg)
         self.assertEqual(len(SomeInherittedTest._observation_types), 1)
         self.assertEqual(
@@ -310,7 +310,7 @@ class TestExtrasInObservations(OpalTestCase):
         with self.assertRaises(exceptions.APIError) as ap:
             test.update_from_dict(data, None)
 
-        err = "unknown extras set(['not_found']) found for <class 'lab.tests.models.SomeObservationWithExtras'>"
+        err = "unknown extras not_found found for <class 'lab.tests.models.SomeObservationWithExtras'>"
         self.assertEqual(
             str(ap.exception), err
         )
@@ -356,7 +356,7 @@ class TestExtrasInTests(OpalTestCase):
                     not_found="some name"
                 )
             ), None)
-        err = "unknown extras set(['not_found']) found for <class 'lab.tests.models.SomeTestWithExtras'>"
+        err = "unknown extras not_found found for <class 'lab.tests.models.SomeTestWithExtras'>"
         self.assertEqual(
             str(ap.exception), err
         )
@@ -432,6 +432,25 @@ class TestObservations(OpalTestCase):
         self.assertEqual(
             SomeTestWithSynonyms.some_other_observation.required,
             False
+        )
+
+    def test_dynamic_lookup_list(self):
+        dn = models.DynamicLookupList(lookup_list="trees")
+        self.assertEqual(
+            dn.lookup_list,
+            "trees"
+        )
+
+    def test_dynamic_result_choices(self):
+        dc = models.DynamicResultChoices(result_choices="trees")
+        self.assertEqual(
+            dc.result_choices,
+            "trees"
+        )
+
+        self.assertEqual(
+            dc.get_result_look_up_list(),
+            "trees"
         )
 
 
