@@ -107,7 +107,7 @@ class TestLabTestSave(OpalTestCase):
         with self.assertRaises(exceptions.APIError) as e:
             lab_test.update_from_dict(data_dict, self.user)
         self.assertEqual(
-            e.exception.message,
+            str(e.exception),
             "some_required_observation is required by SomeTestWithARequiredObservation"
         )
 
@@ -129,7 +129,7 @@ class TestLabTestSave(OpalTestCase):
             lab_test.cast_to_class("something that just doesn't exist")
 
         self.assertEqual(
-            e.exception.message,
+            str(e.exception),
             "unable to find a lab test type for 'something that just doesn't exist'"
         )
 
@@ -310,7 +310,7 @@ class TestExtrasInObservations(OpalTestCase):
         with self.assertRaises(exceptions.APIError) as ap:
             test.update_from_dict(data, None)
 
-        err = "unknown extras set(['not_found']) found for <class 'lab.tests.models.SomeObservationWithExtras'>"
+        err = "unknown extras not_found found for <class 'lab.tests.models.SomeObservationWithExtras'>"
         self.assertEqual(
             str(ap.exception), err
         )
@@ -356,7 +356,7 @@ class TestExtrasInTests(OpalTestCase):
                     not_found="some name"
                 )
             ), None)
-        err = "unknown extras set(['not_found']) found for <class 'lab.tests.models.SomeTestWithExtras'>"
+        err = "unknown extras not_found found for <class 'lab.tests.models.SomeTestWithExtras'>"
         self.assertEqual(
             str(ap.exception), err
         )
