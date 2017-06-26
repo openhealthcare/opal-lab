@@ -210,7 +210,7 @@ class TestGetField(OpalTestCase):
 
 
 class TestMetaClass(OpalTestCase):
-    def test_picks_up_inheritied_observations(self):
+    def test_picks_up_inherited_observations(self):
         self.assertEqual(SomeInherittedTest.some_name.__class__, models.PosNeg)
         self.assertEqual(len(SomeInherittedTest._observation_types), 1)
         self.assertEqual(
