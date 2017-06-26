@@ -281,10 +281,6 @@ class LabTestMetaclass(CastToProxyClassMetaclass):
 
         observation_fields = []
 
-        debug = False
-        if name == 'SomeAbstractTest':
-            debug = True
-
         for base in bases:
             if hasattr(base, "_observation_types"):
                 observation_fields.extend(base._observation_types)
