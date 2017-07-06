@@ -14,12 +14,14 @@ def change_to_datetime(apps, schema_editor):
                 lab_test.date_ordered.month,
                 lab_test.date_ordered.day
             )
+
         if lab_test.date_received:
             lab_test.datetime_received = datetime.datetime(
                 lab_test.date_received.year,
                 lab_test.date_received.month,
                 lab_test.date_received.day
             )
+        lab_test.save()
 
 
 def change_to_date(apps, schema_editor):
@@ -37,6 +39,7 @@ def change_to_date(apps, schema_editor):
                 lab_test.datetime_received.month,
                 lab_test.datetime_received.day
             )
+        lab_test.save()
 
 
 class Migration(migrations.Migration):
