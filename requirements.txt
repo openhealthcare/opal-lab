@@ -4,3 +4,4 @@ python-dateutil==2.4.2
 mock
 jsonfield==1.0.3
 opal==0.8.1
+django-reversion==1.8.7

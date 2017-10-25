@@ -1,4 +1,5 @@
 import mock
+import reversion
 from opal.core.test import OpalTestCase
 from opal.core import exceptions
 from lab import models
@@ -7,6 +8,7 @@ from lab.tests.models import (
     SomeTestWithObservationsWithExtras, SomeTestWithSynonyms,
     SomeReadOnlyTest, SomeTestWithARequiredObservation
 )
+from lab import admin
 
 
 class TestLabTestSave(OpalTestCase):
@@ -491,3 +493,33 @@ class TestReadOnlyLabTest(OpalTestCase):
 
     def test_get_result_form_url(self):
         self.assertIsNone(SomeReadOnlyTest.get_result_form_url())
+
+
+class ReversionTestCase(OpalTestCase):
+    def test_deletion(self):
+        patient, _ = self.new_patient_and_episode_please()
+        data_dict = dict(
+            lab_test_type="Smear",
+            pathology=dict(result="-ve")
+        )
+        with reversion.create_revision():
+            lab_test = models.LabTest(patient=patient)
+            lab_test.update_from_dict(data_dict, self.user)
+
+        with reversion.create_revision():
+            lab_test.delete()
+
+        all_deleted = reversion.get_deleted(Smear)
+        self.assertEqual(len(all_deleted), 1)
+        deleted = all_deleted[0]
+        self.assertEqual(deleted.field_dict['lab_test_type'], 'Smear')
+        self.assertEqual(deleted.field_dict['id'], 1)
+        all_deleted = reversion.get_deleted(models.PosNegUnknown)
+        self.assertEqual(len(all_deleted), 1)
+        deleted = all_deleted[0]
+        self.assertEqual(
+            deleted.field_dict['observation_type'], 'PosNegUnknown'
+        )
+        self.assertEqual(
+            deleted.field_dict['lab_test'], 1
+        )

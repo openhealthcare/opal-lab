@@ -352,10 +352,10 @@ class LabTest(
     extras = JSONField(blank=True, null=True)
 
     sensitive_antibiotics = models.ManyToManyField(
-        omodels.Antimicrobial, related_name="test_sensitive"
+        omodels.Antimicrobial, related_name="test_sensitive", blank=True
     )
     resistant_antibiotics = models.ManyToManyField(
-        omodels.Antimicrobial, related_name="test_resistant"
+        omodels.Antimicrobial, related_name="test_resistant", blank=True
     )
 
     __metaclass__ = LabTestMetaclass
