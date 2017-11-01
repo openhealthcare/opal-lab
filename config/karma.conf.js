@@ -6,9 +6,9 @@ module.exports = function(config){
     opalPath = '/home/travis/virtualenv/python' + python_version + '/src/opal';
   }
   else{
-    opalPath = '../../opal';
+    opalPath = '../../opal/opal';
   }
-  var karmaDefaults = require(opalPath + '/config/karma_defaults.js');
+  var karmaDefaults = require(opalPath + '/tests/js_config/karma_defaults.js');
   var baseDir = '../' + __dirname;
   var coverageFiles = [
     __dirname + "/../" + projectName + "/static/js/" + projectName + "/**/*.js"

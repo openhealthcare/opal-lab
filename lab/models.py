@@ -357,10 +357,10 @@ class LabTest(six.with_metaclass(
     extras = JSONField(blank=True, null=True)
 
     sensitive_antibiotics = models.ManyToManyField(
-        omodels.Antimicrobial, related_name="test_sensitive"
+        omodels.Antimicrobial, related_name="test_sensitive", blank=True
     )
     resistant_antibiotics = models.ManyToManyField(
-        omodels.Antimicrobial, related_name="test_resistant"
+        omodels.Antimicrobial, related_name="test_resistant", blank=True
     )
 
     def __init__(self, *args, **kwargs):
