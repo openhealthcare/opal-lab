@@ -1,5 +1,5 @@
 import reversion
-from models import LabTest, Observation
+from lab.models import LabTest, Observation
 from opal.utils import _itersubclasses
 from django.contrib import admin
 
