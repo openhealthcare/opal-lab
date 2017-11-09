@@ -45,7 +45,7 @@ def change_to_date(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('lab', '0005_auto_20161219_1110'),
+        ('lab', '0006_auto_20171024_1543'),
     ]
 
     operations = [
