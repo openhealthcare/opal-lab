@@ -60,7 +60,6 @@ class LabTemplateContextTestCase(OpalTestCase):
         )
 
 
-
 class LabTemplateRenderingTestCase(OpalTestCase):
     def setUp(self):
         self.patient, _ = self.new_patient_and_episode_please()

@@ -1,10 +1,11 @@
-import reversion
+from reversion.admin import VersionAdmin
+from reversion import revisions as reversion
 from lab.models import LabTest, Observation
 from opal.utils import _itersubclasses
 from django.contrib import admin
 
 
-class LabTestAdmin(reversion.VersionAdmin):
+class LabTestAdmin(VersionAdmin):
     pass
 
 

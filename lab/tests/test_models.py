@@ -1,5 +1,5 @@
 import mock
-import reversion
+from reversion import revisions as reversion
 from opal.core.test import OpalTestCase
 from opal.core import exceptions
 from lab import models
@@ -8,8 +8,6 @@ from lab.tests.models import (
     SomeTestWithObservationsWithExtras, SomeTestWithSynonyms,
     SomeReadOnlyTest, SomeTestWithARequiredObservation
 )
-from lab import admin
-
 
 class TestLabTestSave(OpalTestCase):
     def setUp(self):
