@@ -1,11 +1,9 @@
 """
-Views for the lab OPAL Plugin
+Views for the lab Opal Plugin
 """
-
-from opal.core.views import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
 
-from opal.core.views import LoginRequiredMixin
 
 class AbstractLabTestView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, *args, **kwargs):
