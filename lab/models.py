@@ -26,12 +26,14 @@ class LabTestQueryset(PatientSubrecordQueryset):
             )
         }
 
-    def for_patient(self, patient):
-        qs = super(LabTestQueryset, self).for_patient(patient)
+    def for_patient(self, patient, *args, **kwargs):
+        qs = super(LabTestQueryset, self).for_patient(patient, *args, **kwargs)
         return qs.exclude(lab_test_type__in=self.to_exclude())
 
-    def for_patients(self, patients):
-        qs = super(LabTestQueryset, self).for_patients(patients)
+    def for_patients(self, patients, *args, **kwargs):
+        qs = super(LabTestQueryset, self).for_patients(
+            patients, *args, **kwargs
+        )
         return qs.exclude(lab_test_type__in=self.to_exclude())
 
 
@@ -49,14 +51,14 @@ class LabTestManager(models.Manager):
             kwargs.update(dict(lab_test_type=self.model.get_display_name()))
         return super(LabTestManager, self).create(**kwargs)
 
-    def for_patient(self, patient):
-        return self.all().for_patient(patient)
+    def for_patient(self, patient, *args, **kwargs):
+        return self.all().for_patient(patient, *args, **kwargs)
 
-    def for_episode(self, episode):
-        return self.all().for_episode(episode)
+    def for_episode(self, episode, *args, **kwargs):
+        return self.all().for_episode(episode, *args, **kwargs)
 
-    def for_patients(self, patients):
-        return self.all().for_patients(patients)
+    def for_patients(self, patients, *args, **kwargs):
+        return self.all().for_patients(patients, *args, **kwargs)
 
 
 class ExtrasMixin(object):
