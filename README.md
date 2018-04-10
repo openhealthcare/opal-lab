@@ -185,6 +185,8 @@ When serialised, all observations are serialised to 'observations'
 
 This is useful for when you've got lab tests created, for example by an external system. As the observations are not typed in any way the ability to edit is removed.
 
+By default ReadOnlyLabTest are not serialised to_dict and cannot be updated or changed. If you want to bring them to the client, you will need to write
+your own api end points.
 
 ### Writing Custom Observations
 opal-labs ships with an the most common use cases however its perfectly possible that you'd like to write observations for your specific requirements.
@@ -282,3 +284,7 @@ class ChestXray(models.LabTest):
 ### Defaults
 
 Defaults are currently set like you would set a default on an ordinary field.
+
+### Exclude tests from serialisation
+
+As the volume of lab tests can be incredibly high, its possible that you will want to exclude lab tests from the serialisation by episodes or patients. This means that they won't be editable.

@@ -7,6 +7,7 @@ from django.db.models.base import ModelBase
 import opal.models as omodels
 from opal.utils import find_template
 from opal.utils import AbstractBase, _itersubclasses, camelcase_to_underscore
+from opal.managers import PatientSubrecordQueryset
 from opal.core.exceptions import APIError
 import copy
 
@@ -17,12 +18,29 @@ class CastToProxyClassMetaclass(ModelBase):
         return obj.get_object()
 
 
+class LabTestQueryset(PatientSubrecordQueryset):
+    def to_exclude(self):
+        return {
+            i.get_display_name() for i in LabTest.list() if getattr(
+                i, "_exclude_from_serialisation", False
+            )
+        }
+
+    def for_patient(self, patient):
+        qs = super(LabTestQueryset, self).for_patient(patient)
+        return qs.exclude(lab_test_type__in=self.to_exclude())
+
+    def for_patients(self, patients):
+        qs = super(LabTestQueryset, self).for_patients(patients)
+        return qs.exclude(lab_test_type__in=self.to_exclude())
+
+
 class LabTestManager(models.Manager):
     def get_queryset(self):
         if self.model == LabTest:
-            return super(LabTestManager, self).get_queryset()
+            return LabTestQueryset(self.model, using=self._db)
         else:
-            return super(LabTestManager, self).get_queryset().filter(
+            return LabTestQueryset(self.model, using=self._db).filter(
                 lab_test_type=self.model.get_display_name()
             )
 
@@ -30,6 +48,15 @@ class LabTestManager(models.Manager):
         if not self.model == LabTest:
             kwargs.update(dict(lab_test_type=self.model.get_display_name()))
         return super(LabTestManager, self).create(**kwargs)
+
+    def for_patient(self, patient):
+        return self.all().for_patient(patient)
+
+    def for_episode(self, episode):
+        return self.all().for_episode(episode)
+
+    def for_patients(self, patients):
+        return self.all().for_patients(patients)
 
 
 class ExtrasMixin(object):
@@ -617,6 +644,7 @@ class ReadOnlyLabTest(LabTest, AbstractBase):
         This is useful for miscellanious tests coming in from upstream
     """
     HAS_FORM = False
+    _exclude_from_serialisation = True
 
     # unfortunately we need to override the extras mixin behaviour
     def set_extras(self, extras, *args, **kwargs):

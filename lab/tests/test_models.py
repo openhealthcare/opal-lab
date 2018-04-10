@@ -2,12 +2,14 @@ import mock
 from reversion import revisions as reversion
 from opal.core.test import OpalTestCase
 from opal.core import exceptions
+from opal import models as omodels
 from lab import models
 from lab.tests.models import (
     Smear, SampleTest, SomeInherittedTest, SomeTestWithExtras,
     SomeTestWithObservationsWithExtras, SomeTestWithSynonyms,
     SomeReadOnlyTest, SomeTestWithARequiredObservation
 )
+
 
 class TestLabTestSave(OpalTestCase):
     def setUp(self):
@@ -369,7 +371,9 @@ class TestExtrasInTests(OpalTestCase):
         self.assertEqual(as_dict["extras"]["interesting"], 2)
 
     def test_to_dict_if_none(self):
-        some_detailed_test = SomeTestWithExtras.objects.create(patient=self.patient)
+        some_detailed_test = SomeTestWithExtras.objects.create(
+            patient=self.patient
+        )
         as_dict = some_detailed_test.to_dict(None)
         self.assertEqual(as_dict["extras"]["interesting"], None)
 
@@ -510,6 +514,101 @@ class TestReadOnlyLabTest(OpalTestCase):
 
     def test_get_result_form_url(self):
         self.assertIsNone(SomeReadOnlyTest.get_result_form_url())
+
+
+class ManagersTestCase(OpalTestCase):
+    def setUp(self):
+        super(ManagersTestCase, self).setUp()
+        self.patient, self.episode = self.new_patient_and_episode_please()
+
+    def create_read_only_test(self, patient):
+        return SomeReadOnlyTest.objects.create(
+            patient=patient,
+            extras={"observations": [{"interesting": "things"}]}
+        )
+
+    def create_simple_test(self, patient):
+        return SampleTest.objects.create(
+            patient=patient
+        )
+
+    def test_managers_for_patient(self):
+        self.create_read_only_test(self.patient)
+        self.create_simple_test(self.patient)
+        result = models.LabTest.objects.for_patient(self.patient)
+        self.assertEqual(
+            result.get().lab_test_type,
+            SampleTest.get_display_name()
+        )
+
+    def test_managers_for_episode(self):
+        self.create_read_only_test(self.patient)
+        self.create_simple_test(self.patient)
+        result = models.LabTest.objects.for_episode(self.episode)
+        self.assertEqual(
+            result.get().lab_test_type,
+            SampleTest.get_display_name()
+        )
+
+    def test_managers_for_patients(self):
+        patient_2, _ = self.new_patient_and_episode_please()
+        patient_3, _ = self.new_patient_and_episode_please()
+        self.create_read_only_test(self.patient)
+        self.create_simple_test(self.patient)
+
+        self.create_simple_test(patient_2)
+
+        self.create_read_only_test(patient_3)
+        qs = models.LabTest.objects.for_patients(
+            omodels.Patient.objects.all()
+        )
+        self.assertEqual(qs.count(), 2)
+        self.assertEqual(
+            list(qs.values_list("lab_test_type", flat=True)),
+            [SampleTest.get_display_name(), SampleTest.get_display_name()]
+        )
+
+    def test_queryset_for_patient(self):
+        self.create_read_only_test(self.patient)
+        self.create_simple_test(self.patient)
+        result = models.LabTest.objects.all().for_patient(self.patient)
+        self.assertEqual(
+            result.get().lab_test_type,
+            SampleTest.get_display_name()
+        )
+
+    def test_queryset_for_episode(self):
+        self.create_read_only_test(self.patient)
+        self.create_simple_test(self.patient)
+        result = models.LabTest.objects.all().for_episode(self.episode)
+        self.assertEqual(
+            result.get().lab_test_type,
+            SampleTest.get_display_name()
+        )
+
+    def test_queryset_for_patients(self):
+        patient_2, _ = self.new_patient_and_episode_please()
+        patient_3, _ = self.new_patient_and_episode_please()
+        self.create_read_only_test(self.patient)
+        self.create_simple_test(self.patient)
+
+        self.create_simple_test(patient_2)
+
+        self.create_read_only_test(patient_3)
+        qs = models.LabTest.objects.all().for_patients(
+            omodels.Patient.objects.all()
+        )
+        self.assertEqual(qs.count(), 2)
+        self.assertEqual(
+            list(qs.values_list("lab_test_type", flat=True)),
+            [SampleTest.get_display_name(), SampleTest.get_display_name()]
+        )
+
+    def test_to_exclude(self):
+        self.assertEqual(
+            models.LabTest.objects.all().to_exclude(),
+            set([u'Some Read Only Lab Test', u'Some Read Only Test'])
+        )
 
 
 class ReversionTestCase(OpalTestCase):
