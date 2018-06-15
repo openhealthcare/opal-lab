@@ -327,6 +327,8 @@ class LabTest(six.with_metaclass(
         accessing an objects lab tests
     """
     _icon = 'fa fa-crosshairs'
+    _advanced_searchable = False
+    _exclude_from_extract = True
     _extras = []
     objects = LabTestManager()
     _synonyms = []
