@@ -2,7 +2,7 @@ import six
 from jsonfield import JSONField
 from django.db import models
 from django.db import transaction
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.db.models.base import ModelBase
 import opal.models as omodels
 from opal.utils import find_template
@@ -77,7 +77,7 @@ class Observation(six.with_metaclass(
     consistency_token = models.CharField(max_length=8)
     observation_type = models.CharField(max_length=256)
     extras = JSONField(blank=True, null=True)
-    lab_test = models.ForeignKey('LabTest', related_name='observations')
+    lab_test = models.ForeignKey('LabTest', related_name='observations', on_delete=models.CASCADE)
     result = models.CharField(
         blank=True,
         null=True,
