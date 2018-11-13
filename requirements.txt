@@ -1,7 +1,7 @@
-Django==1.10.8
+django==2.0.9
 django-choices==1.4.4
 python-dateutil==2.4.2
 mock
-jsonfield==1.0.3
--e git+https://github.com/openhealthcare/opal.git@v0.10.0#egg=opal
-django-reversion==1.10.2
+jsonfield==2.0.2
+-e git+https://github.com/openhealthcare/opal.git@django2#egg=opal
+django-reversion==3.0.1
