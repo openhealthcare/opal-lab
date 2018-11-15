@@ -25,6 +25,6 @@ setup(
     install_requires=[
         'opal>=0.10.0',
         'django-choices==1.4.4',
-        'jsonfield==1.0.3'
+        'jsonfield==2.0.2'
     ]
 )
