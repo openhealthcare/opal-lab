@@ -1,6 +1,5 @@
 from django import template
 import django.template.loader as loader
-from django.template import Context
 
 register = template.Library()
 
@@ -30,4 +29,4 @@ def observation_form(observation, label=None, model=False, element_name=False):
             observation.get_api_name(), extra
         )
 
-    return t.render(Context(ctx))
+    return t.render(ctx)
