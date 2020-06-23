@@ -1,6 +1,12 @@
 This is lab - an [Opal](https://github.com/openhealthcare/opal) plugin.
 
 
+## ! Important Notice !
+
+This plugin is no longer actively maintiained - as it depends on a version of django that is no longer supported by OPAL
+
+
+
 [![Build
 Status](https://travis-ci.org/openhealthcare/opal-lab.png)](https://travis-ci.org/openhealthcare/opal-lab)
 [![Coverage Status](https://coveralls.io/repos/github/openhealthcare/opal-lab/badge.svg?branch=v0.2.0)](https://coveralls.io/github/openhealthcare/opal-lab?branch=v0.2.0)
